@@ -1,5 +1,6 @@
 using ClientManager.Extensions;
 using Microsoft.AspNetCore.HttpOverrides;
+using Serilog;
 
 namespace ClientManager
 {
@@ -10,6 +11,15 @@ namespace ClientManager
             var builder = WebApplication.CreateBuilder(args);
 
             builder.Services.ConfigureCors();
+
+            builder.Services.ConfigureLoggerService();
+
+            builder.Services.AddControllers();
+
+            builder.Host.UseSerilog((hostContext, configuration) =>
+            {
+                configuration.ReadFrom.Configuration(hostContext.Configuration);
+            });
 
             var app = builder.Build();
 
