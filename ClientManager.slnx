@@ -1,5 +1,6 @@
 <Solution>
   <Project Path="ClientManager.Core.Domain/ClientManager.Core.Domain.csproj" />
+  <Project Path="ClientManager.Infrastructure.Persistence/ClientManager.Infrastructure.Persistence.csproj" Id="3f91bb61-d01a-43aa-b9c9-2a8c39770ef0" />
   <Project Path="ClientManager/ClientManager.csproj" />
   <Project Path="LoggingService/LoggingService.csproj" />
 </Solution>
