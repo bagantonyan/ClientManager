@@ -1,4 +1,5 @@
-﻿using ClientManager.Core.Domain.Entities;
+using ClientManager.Core.Domain.Entities;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace ClientManager.Infrastructure.Persistence.Configurations
@@ -10,6 +11,21 @@ namespace ClientManager.Infrastructure.Persistence.Configurations
             base.Configure(builder);
 
             builder.HasKey(p => p.Id);
+
+            builder.Property(p => p.INN)
+                .IsRequired(true)
+                .HasMaxLength(12);
+
+            builder.Property(p => p.FullName)
+                .IsRequired(true)
+                .HasMaxLength(500);
+
+            builder.HasIndex(p => p.INN)
+                .IsUnique();
+
+            builder.ToTable(t => t.HasCheckConstraint(
+                "CK_Founder_INN_Length",
+                "LEN([INN]) = 12"));
         }
     }
 }

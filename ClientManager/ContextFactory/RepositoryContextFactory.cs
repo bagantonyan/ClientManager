@@ -15,7 +15,7 @@ namespace ClientManager.ContextFactory
 
             var builder = new DbContextOptionsBuilder<RepositoryContext>()
                 .UseSqlServer(configuration.GetConnectionString("sqlConnection"),
-                    b => b.MigrationsAssembly("CompanyEmployees.Infrastructure.Persistence"));
+                    b => b.MigrationsAssembly("ClientManager.Infrastructure.Persistence"));
 
             return new RepositoryContext(builder.Options);
         }
