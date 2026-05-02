@@ -14,6 +14,8 @@ namespace ClientManager
 
             builder.Services.ConfigureLoggerService();
 
+            builder.Services.ConfigureRepositoryManager();
+
             builder.Services.AddControllers();
 
             builder.Host.UseSerilog((hostContext, configuration) =>

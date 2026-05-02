@@ -1,4 +1,6 @@
-﻿using LoggingService;
+﻿using ClientManager.Core.Domain.Repositories;
+using ClientManager.Infrastructure.Persistence;
+using LoggingService;
 
 namespace ClientManager.Extensions
 {
@@ -15,5 +17,8 @@ namespace ClientManager.Extensions
 
         public static void ConfigureLoggerService(this IServiceCollection services) =>
             services.AddSingleton<ILoggerManager, LoggerManager>();
+
+        public static void ConfigureRepositoryManager(this IServiceCollection services) =>
+            services.AddScoped<IRepositoryManager, RepositoryManager>();
     }
 }
