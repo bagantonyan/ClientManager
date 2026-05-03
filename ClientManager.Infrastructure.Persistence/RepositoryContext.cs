@@ -1,4 +1,5 @@
 ﻿using ClientManager.Core.Domain.Entities;
+using ClientManager.Infrastructure.Persistence.Extensions;
 using Microsoft.EntityFrameworkCore;
 
 namespace ClientManager.Infrastructure.Persistence
@@ -17,6 +18,13 @@ namespace ClientManager.Infrastructure.Persistence
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.ApplyConfigurationsFromAssembly(typeof(RepositoryContext).Assembly);
+        }
+
+        public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+        {
+            ChangeTracker.SetAuditProperties();
+
+            return base.SaveChangesAsync(cancellationToken);
         }
     }
 }

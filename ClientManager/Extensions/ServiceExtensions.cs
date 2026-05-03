@@ -3,6 +3,7 @@ using ClientManager.Core.Services;
 using ClientManager.Core.Services.Abstractions;
 using ClientManager.Infrastructure.Persistence;
 using LoggingService;
+using Microsoft.EntityFrameworkCore;
 
 namespace ClientManager.Extensions
 {
@@ -25,5 +26,9 @@ namespace ClientManager.Extensions
 
         public static void ConfigureServiceManager(this IServiceCollection services) =>
             services.AddScoped<IServiceManager, ServiceManager>();
+
+        public static void ConfigureSqlContext(this IServiceCollection services, IConfiguration configuration) =>
+            services.AddDbContext<RepositoryContext>(opts =>
+                opts.UseSqlServer(configuration.GetConnectionString("sqlConnection")));
     }
 }

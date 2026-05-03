@@ -18,6 +18,8 @@ namespace ClientManager
 
             builder.Services.ConfigureServiceManager();
 
+            builder.Services.ConfigureSqlContext(builder.Configuration);
+
             builder.Services.AddControllers();
 
             builder.Host.UseSerilog((hostContext, configuration) =>
