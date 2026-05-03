@@ -27,7 +27,7 @@ namespace ClientManager.Infrastructure.Persistence.Migrations
                 {
                     table.PrimaryKey("PK_Clients", x => x.Id);
                     table.UniqueConstraint("AK_Clients_Id_ClientType", x => new { x.Id, x.ClientType });
-                    table.CheckConstraint("CK_Client_INN_LengthByType", "([ClientType] = 1 AND LEN([INN]) = 10) OR ([ClientType] = 2 AND LEN([INN]) = 12)");
+                    table.CheckConstraint("CK_Client_INN_Format", "[INN] NOT LIKE '%[^0-9]%' AND (([ClientType] = 1 AND LEN([INN]) = 10) OR ([ClientType] = 2 AND LEN([INN]) = 12))");
                 });
 
             migrationBuilder.CreateTable(
@@ -44,7 +44,7 @@ namespace ClientManager.Infrastructure.Persistence.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Founders", x => x.Id);
-                    table.CheckConstraint("CK_Founder_INN_Length", "LEN([INN]) = 12");
+                    table.CheckConstraint("CK_Founder_INN_Format", "LEN([INN]) = 12 AND [INN] NOT LIKE '%[^0-9]%'");
                 });
 
             migrationBuilder.CreateTable(

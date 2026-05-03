@@ -31,9 +31,10 @@ namespace ClientManager.Infrastructure.Persistence.Configurations
             builder.HasAlternateKey(p => new { p.Id, p.ClientType });
 
             builder.ToTable(t => t.HasCheckConstraint(
-                "CK_Client_INN_LengthByType",
+                "CK_Client_INN_Format",
+                "[INN] NOT LIKE '%[^0-9]%' AND (" +
                 $"([ClientType] = {(int)ClientType.Legal_Entity} AND LEN([INN]) = 10) " +
-                $"OR ([ClientType] = {(int)ClientType.Individual_Entrepreneur} AND LEN([INN]) = 12)"));
+                $"OR ([ClientType] = {(int)ClientType.Individual_Entrepreneur} AND LEN([INN]) = 12))"));
         }
     }
 }

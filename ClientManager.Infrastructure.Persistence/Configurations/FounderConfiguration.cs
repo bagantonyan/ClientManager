@@ -24,8 +24,8 @@ namespace ClientManager.Infrastructure.Persistence.Configurations
                 .IsUnique();
 
             builder.ToTable(t => t.HasCheckConstraint(
-                "CK_Founder_INN_Length",
-                "LEN([INN]) = 12"));
+                "CK_Founder_INN_Format",
+                "LEN([INN]) = 12 AND [INN] NOT LIKE '%[^0-9]%'"));
         }
     }
 }

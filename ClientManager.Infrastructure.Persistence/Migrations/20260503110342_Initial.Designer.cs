@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ClientManager.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(RepositoryContext))]
-    [Migration("20260502161520_Initial")]
+    [Migration("20260503110342_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -60,7 +60,7 @@ namespace ClientManager.Infrastructure.Persistence.Migrations
 
                     b.ToTable("Clients", t =>
                         {
-                            t.HasCheckConstraint("CK_Client_INN_LengthByType", "([ClientType] = 1 AND LEN([INN]) = 10) OR ([ClientType] = 2 AND LEN([INN]) = 12)");
+                            t.HasCheckConstraint("CK_Client_INN_Format", "[INN] NOT LIKE '%[^0-9]%' AND (([ClientType] = 1 AND LEN([INN]) = 10) OR ([ClientType] = 2 AND LEN([INN]) = 12))");
                         });
                 });
 
@@ -128,7 +128,7 @@ namespace ClientManager.Infrastructure.Persistence.Migrations
 
                     b.ToTable("Founders", t =>
                         {
-                            t.HasCheckConstraint("CK_Founder_INN_Length", "LEN([INN]) = 12");
+                            t.HasCheckConstraint("CK_Founder_INN_Format", "LEN([INN]) = 12 AND [INN] NOT LIKE '%[^0-9]%'");
                         });
                 });
 
