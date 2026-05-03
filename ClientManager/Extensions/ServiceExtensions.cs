@@ -1,4 +1,6 @@
 ﻿using ClientManager.Core.Domain.Repositories;
+using ClientManager.Core.Services;
+using ClientManager.Core.Services.Abstractions;
 using ClientManager.Infrastructure.Persistence;
 using LoggingService;
 
@@ -11,8 +13,8 @@ namespace ClientManager.Extensions
             {
                 options.AddPolicy("CorsPolicy", builder =>
                     builder.AllowAnyOrigin()
-                    .AllowAnyMethod()
-                    .AllowAnyHeader());
+                           .AllowAnyMethod()
+                           .AllowAnyHeader());
             });
 
         public static void ConfigureLoggerService(this IServiceCollection services) =>
@@ -20,5 +22,8 @@ namespace ClientManager.Extensions
 
         public static void ConfigureRepositoryManager(this IServiceCollection services) =>
             services.AddScoped<IRepositoryManager, RepositoryManager>();
+
+        public static void ConfigureServiceManager(this IServiceCollection services) =>
+            services.AddScoped<IServiceManager, ServiceManager>();
     }
 }
