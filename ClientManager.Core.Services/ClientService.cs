@@ -1,7 +1,8 @@
-﻿using ClientManager.Core.Domain.Entities;
+﻿using AutoMapper;
 using ClientManager.Core.Domain.Repositories;
 using ClientManager.Core.Services.Abstractions;
 using LoggingService;
+using Shared.DataTransferObjects.Clients;
 
 namespace ClientManager.Core.Services
 {
@@ -9,18 +10,26 @@ namespace ClientManager.Core.Services
     {
         private readonly IRepositoryManager _repository;
         private readonly ILoggerManager _logger;
-        public ClientService(IRepositoryManager repository, ILoggerManager logger)
+        private readonly IMapper _mapper;
+        public ClientService(
+            IRepositoryManager repository, 
+            ILoggerManager logger,
+            IMapper mapper)
         {
             _repository = repository;
             _logger = logger;
+            _mapper = mapper;
         }
 
-        public IEnumerable<Client> GetAllClients(bool trackChanges)
+        public IEnumerable<ClientDto> GetAllClients(bool trackChanges)
         {
             try
             {
                 var clients = _repository.Client.GetAllClients(trackChanges);
-                return clients;
+
+                var clientsDto = _mapper.Map<IEnumerable<ClientDto>>(clients);
+
+                return clientsDto;
             }
             catch (Exception ex)
             {

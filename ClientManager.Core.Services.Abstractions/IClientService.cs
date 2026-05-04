@@ -1,9 +1,9 @@
-﻿using ClientManager.Core.Domain.Entities;
+﻿using Shared.DataTransferObjects.Clients;
 
 namespace ClientManager.Core.Services.Abstractions
 {
     public interface IClientService
     {
-        IEnumerable<Client> GetAllClients(bool trackChanges);
+        IEnumerable<ClientDto> GetAllClients(bool trackChanges);
     }
 }

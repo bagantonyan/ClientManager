@@ -6,4 +6,5 @@
   <Project Path="ClientManager.Infrastructure.Presentation/ClientManager.Infrastructure.Presentation.csproj" Id="a28fc7e7-121c-42d7-81e6-ecbd90c0495a" />
   <Project Path="ClientManager/ClientManager.csproj" />
   <Project Path="LoggingService/LoggingService.csproj" />
+  <Project Path="Shared/Shared.csproj" Id="e8931afb-f776-4d0f-9579-04bae4b82e15" />
 </Solution>

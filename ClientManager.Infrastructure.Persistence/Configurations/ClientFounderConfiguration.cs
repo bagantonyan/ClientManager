@@ -1,7 +1,7 @@
 using ClientManager.Core.Domain.Entities;
-using ClientManager.Core.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using Shared.Enums;
 
 namespace ClientManager.Infrastructure.Persistence.Configurations
 {

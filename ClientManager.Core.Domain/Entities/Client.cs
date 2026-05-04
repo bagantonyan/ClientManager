@@ -1,4 +1,4 @@
-﻿using ClientManager.Core.Domain.Enums;
+﻿using Shared.Enums;
 
 namespace ClientManager.Core.Domain.Entities
 {

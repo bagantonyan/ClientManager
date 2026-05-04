@@ -1,3 +1,4 @@
+using ClientManager.Core.Services;
 using ClientManager.Extensions;
 using Microsoft.AspNetCore.HttpOverrides;
 using Serilog;
@@ -19,6 +20,8 @@ namespace ClientManager
             builder.Services.ConfigureServiceManager();
 
             builder.Services.ConfigureSqlContext(builder.Configuration);
+
+            builder.Services.AddAutoMapper(cfg => { }, typeof(MappingProfile));
 
             builder.Services.AddControllers()
                 .AddApplicationPart(typeof(ClientManager.Infrastructure.Presentation.AssemblyReference).Assembly);

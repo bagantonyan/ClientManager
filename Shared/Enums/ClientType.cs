@@ -1,4 +1,4 @@
-﻿namespace ClientManager.Core.Domain.Enums
+﻿namespace Shared.Enums
 {
     public enum ClientType
     {
