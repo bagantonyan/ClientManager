@@ -23,6 +23,8 @@ namespace ClientManager
             builder.Services.AddControllers()
                 .AddApplicationPart(typeof(ClientManager.Infrastructure.Presentation.AssemblyReference).Assembly);
 
+            builder.Services.ConfigureSwagger();
+
             builder.Host.UseSerilog((hostContext, configuration) =>
             {
                 configuration.ReadFrom.Configuration(hostContext.Configuration);
@@ -31,7 +33,14 @@ namespace ClientManager
             var app = builder.Build();
 
             if (app.Environment.IsDevelopment())
+            {
                 app.UseDeveloperExceptionPage();
+                app.UseSwagger();
+                app.UseSwaggerUI(c =>
+                {
+                    c.SwaggerEndpoint("/swagger/v1/swagger.json", "ClientManager API v1");
+                });
+            }
             else
                 app.UseHsts();
 

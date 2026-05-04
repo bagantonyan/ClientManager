@@ -30,5 +30,14 @@ namespace ClientManager.Extensions
         public static void ConfigureSqlContext(this IServiceCollection services, IConfiguration configuration) =>
             services.AddDbContext<RepositoryContext>(opts =>
                 opts.UseSqlServer(configuration.GetConnectionString("sqlConnection")));
+
+        public static void ConfigureSwagger(this IServiceCollection services)
+        {
+            services.AddEndpointsApiExplorer();
+            services.AddSwaggerGen(c =>
+            {
+                c.SwaggerDoc("v1", new() { Title = "ClientManager API", Version = "v1" });
+            });
+        }
     }
 }
