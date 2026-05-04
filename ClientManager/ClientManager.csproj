@@ -21,6 +21,7 @@
   <ItemGroup>
     <ProjectReference Include="..\ClientManager.Core.Services\ClientManager.Core.Services.csproj" />
     <ProjectReference Include="..\ClientManager.Infrastructure.Persistence\ClientManager.Infrastructure.Persistence.csproj" />
+    <ProjectReference Include="..\ClientManager.Infrastructure.Presentation\ClientManager.Infrastructure.Presentation.csproj" />
     <ProjectReference Include="..\LoggingService\LoggingService.csproj" />
   </ItemGroup>
 

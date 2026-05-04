@@ -3,6 +3,7 @@
   <Project Path="ClientManager.Core.Services.Abstractions/ClientManager.Core.Services.Abstractions.csproj" Id="9f45e0c2-578b-4a21-9ae1-17acaea617d3" />
   <Project Path="ClientManager.Core.Services/ClientManager.Core.Services.csproj" Id="e9f65ff5-f87d-46ce-aa4f-75ab93aa6b3a" />
   <Project Path="ClientManager.Infrastructure.Persistence/ClientManager.Infrastructure.Persistence.csproj" Id="3f91bb61-d01a-43aa-b9c9-2a8c39770ef0" />
+  <Project Path="ClientManager.Infrastructure.Presentation/ClientManager.Infrastructure.Presentation.csproj" Id="a28fc7e7-121c-42d7-81e6-ecbd90c0495a" />
   <Project Path="ClientManager/ClientManager.csproj" />
   <Project Path="LoggingService/LoggingService.csproj" />
 </Solution>

@@ -1,6 +1,9 @@
-﻿namespace ClientManager.Core.Domain.Repositories
+﻿using ClientManager.Core.Domain.Entities;
+
+namespace ClientManager.Core.Domain.Repositories
 {
     public interface IClientRepository
     {
+        IEnumerable<Client> GetAllClients(bool trackChanges);
     }
 }

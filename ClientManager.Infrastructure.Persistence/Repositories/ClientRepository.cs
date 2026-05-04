@@ -9,5 +9,10 @@ namespace ClientManager.Infrastructure.Persistence.Repositories
             : base(repositoryContext)
         {
         }
+
+        public IEnumerable<Client> GetAllClients(bool trackChanges) =>
+            FindAll(trackChanges)
+                .OrderBy(c => c.Name)
+                .ToList();
     }
 }
