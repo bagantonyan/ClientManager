@@ -23,6 +23,10 @@ namespace ClientManager
 
             builder.Services.AddAutoMapper(cfg => { }, typeof(MappingProfile));
 
+            builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
+
+            builder.Services.AddProblemDetails();
+
             builder.Services.AddControllers()
                 .AddApplicationPart(typeof(ClientManager.Infrastructure.Presentation.AssemblyReference).Assembly);
 
@@ -37,7 +41,6 @@ namespace ClientManager
 
             if (app.Environment.IsDevelopment())
             {
-                app.UseDeveloperExceptionPage();
                 app.UseSwagger();
                 app.UseSwaggerUI(c =>
                 {
@@ -46,6 +49,8 @@ namespace ClientManager
             }
             else
                 app.UseHsts();
+
+            app.UseExceptionHandler(opt => { });
 
             app.UseHttpsRedirection();
 

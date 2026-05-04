@@ -14,16 +14,17 @@ namespace ClientManager.Infrastructure.Presentation.Controllers
         [HttpGet]
         public IActionResult GetClients()
         {
-            try
-            {
-                var clients = _service.ClientService.GetAllClients(trackChanges: false);
+            var clients = _service.ClientService.GetAllClients(trackChanges: false);
 
-                return Ok(clients);
-            }
-            catch
-            {
-                return StatusCode(500, "Internal server error");
-            }
+            return Ok(clients);
+        }
+
+        [HttpGet("{id:guid}")]
+        public IActionResult GetClient(Guid id)
+        {
+            var client = _service.ClientService.GetClient(id, trackChanges: false);
+
+            return Ok(client);
         }
     }
 }

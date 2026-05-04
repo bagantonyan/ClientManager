@@ -1,5 +1,6 @@
 ﻿using ClientManager.Core.Domain.Entities;
 using ClientManager.Core.Domain.Repositories;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
 
 namespace ClientManager.Infrastructure.Persistence.Repositories
 {
@@ -14,5 +15,9 @@ namespace ClientManager.Infrastructure.Persistence.Repositories
             FindAll(trackChanges)
                 .OrderBy(c => c.Name)
                 .ToList();
+
+        public Client GetClient(Guid clientId, bool trackChanges) =>
+            FindByCondition(c => c.Id.Equals(clientId), trackChanges)
+                .SingleOrDefault()!;
     }
 }

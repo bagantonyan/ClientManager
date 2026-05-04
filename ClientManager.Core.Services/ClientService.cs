@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using ClientManager.Core.Domain.Exceptions;
 using ClientManager.Core.Domain.Repositories;
 using ClientManager.Core.Services.Abstractions;
 using LoggingService;
@@ -12,7 +13,7 @@ namespace ClientManager.Core.Services
         private readonly ILoggerManager _logger;
         private readonly IMapper _mapper;
         public ClientService(
-            IRepositoryManager repository, 
+            IRepositoryManager repository,
             ILoggerManager logger,
             IMapper mapper)
         {
@@ -23,19 +24,23 @@ namespace ClientManager.Core.Services
 
         public IEnumerable<ClientDto> GetAllClients(bool trackChanges)
         {
-            try
-            {
-                var clients = _repository.Client.GetAllClients(trackChanges);
+            var clients = _repository.Client.GetAllClients(trackChanges);
 
-                var clientsDto = _mapper.Map<IEnumerable<ClientDto>>(clients);
+            var clientsDto = _mapper.Map<IEnumerable<ClientDto>>(clients);
 
-                return clientsDto;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError($"Something went wrong in the {nameof(GetAllClients)} service method {ex}");
-                throw;
-            }
+            return clientsDto;
+        }
+
+        public ClientDto GetClient(Guid id, bool trackChanges)
+        {
+            var client = _repository.Client.GetClient(id, trackChanges);
+
+            if (client is null)
+                throw new ClientNotFoundException(id);
+
+            var clientDto = _mapper.Map<ClientDto>(client);
+
+            return clientDto;
         }
     }
 }
