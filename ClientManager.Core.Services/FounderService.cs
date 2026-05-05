@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using ClientManager.Core.Domain.Entities;
 using ClientManager.Core.Domain.Exceptions;
 using ClientManager.Core.Domain.Repositories;
 using ClientManager.Core.Services.Abstractions;
@@ -52,6 +53,24 @@ namespace ClientManager.Core.Services
             var founder = _mapper.Map<FounderDto>(founderDb);
 
             return founder;
+        }
+
+        public FounderDto CreateFounderForClient(Guid clientId, FounderForCreationDto founderForCreation, bool trackChanges)
+        {
+            var client = _repository.Client.GetClient(clientId, trackChanges, false);
+
+            if (client is null)
+                throw new ClientNotFoundException(clientId);
+
+            var founderEntity = _mapper.Map<Founder>(founderForCreation);
+
+            _repository.Founder.CreateFounderForClient(clientId, founderEntity);
+
+            _repository.Save();
+
+            var founderToReturn = _mapper.Map<FounderDto>(founderEntity);
+
+            return founderToReturn;
         }
     }
 }

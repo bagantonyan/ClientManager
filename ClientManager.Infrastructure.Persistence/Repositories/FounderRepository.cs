@@ -21,5 +21,15 @@ namespace ClientManager.Infrastructure.Persistence.Repositories
                       && f.ClientFounders!.Any(cf => cf.ClientId.Equals(clientId)),
                     trackChanges)
                 .SingleOrDefault()!;
+
+        public void CreateFounderForClient(Guid clientId, Founder founder)
+        {
+            founder.ClientFounders = new List<ClientFounder>
+            {
+                new ClientFounder { ClientId = clientId }
+            };
+
+            Create(founder);
+        }
     }
 }

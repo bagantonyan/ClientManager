@@ -1,5 +1,6 @@
 ﻿using ClientManager.Core.Services.Abstractions;
 using Microsoft.AspNetCore.Mvc;
+using Shared.DataTransferObjects.Founders;
 
 namespace ClientManager.Infrastructure.Presentation.Controllers
 {
@@ -19,12 +20,23 @@ namespace ClientManager.Infrastructure.Presentation.Controllers
             return Ok(founders);
         }
 
-        [HttpGet("{id:guid}")]
+        [HttpGet("{id:guid}", Name = "GetFounderForClient")]
         public IActionResult GetFounderForClient(Guid clientId, Guid id)
         {
             var founder = _service.FounderService.GetFounder(clientId, id, trackChanges: false);
 
             return Ok(founder);
+        }
+
+        [HttpPost]
+        public IActionResult CreateFounderForClient(Guid clientId, [FromBody] FounderForCreationDto founder)
+        {
+            if (founder is null)
+                return BadRequest("FounderForCreationDto object is null");
+
+            var founderToReturn = _service.FounderService.CreateFounderForClient(clientId, founder, trackChanges: true);
+
+            return CreatedAtRoute("GetEmployeeForCompany", new { clientId, id = founderToReturn.Id }, founderToReturn);
         }
     }
 }

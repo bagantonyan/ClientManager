@@ -16,6 +16,8 @@ namespace ClientManager.Core.Services
             CreateMap<Founder, FounderDto>();
 
             CreateMap<ClientForCreationDto, Client>();
+
+            CreateMap<FounderForCreationDto, Founder>();
         }
     }
 }
