@@ -41,11 +41,13 @@ namespace ClientManager.Infrastructure.Presentation.Controllers
         }
 
         [HttpGet("collection/({ids})", Name = "ClientCollection")]
-        public IActionResult GetClientCollection([ModelBinder(BinderType = typeof(ArrayModelBinder))] IEnumerable<Guid> ids)
+        public IActionResult GetClientCollection(
+            [ModelBinder(BinderType = typeof(ArrayModelBinder))] IEnumerable<Guid> ids,
+            [FromQuery] bool includeFounders = true)
         {
-            var companies = _service.ClientService.GetByIds(ids, trackChanges: false);
+            var clients = _service.ClientService.GetByIds(ids, trackChanges: false, includeFounders);
 
-            return Ok(companies);
+            return Ok(clients);
         }
 
         [HttpPost("collection")]

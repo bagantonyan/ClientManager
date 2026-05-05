@@ -39,8 +39,16 @@ namespace ClientManager.Infrastructure.Persistence.Repositories
 
         public void CreateClient(Client client) => Create(client);
 
-        public IEnumerable<Client> GetByIds(IEnumerable<Guid> ids, bool trackChanges) =>
-            FindByCondition(x => ids.Contains(x.Id), trackChanges)
-                .ToList();
+        public IEnumerable<Client> GetByIds(IEnumerable<Guid> ids, bool trackChanges, bool includeFounders)
+        {
+            var query = FindByCondition(x => ids.Contains(x.Id), trackChanges);
+
+            if (includeFounders)
+                query = query
+                    .Include(c => c.ClientFounders!)
+                        .ThenInclude(cf => cf.Founder);
+
+            return query.ToList();
+        }
     }
 }

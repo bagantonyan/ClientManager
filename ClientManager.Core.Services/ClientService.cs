@@ -63,12 +63,12 @@ namespace ClientManager.Core.Services
             return clientToReturn;
         }
 
-        public IEnumerable<ClientDto> GetByIds(IEnumerable<Guid> ids, bool trackChanges)
+        public IEnumerable<ClientDto> GetByIds(IEnumerable<Guid> ids, bool trackChanges, bool includeFounders)
         {
             if (ids is null)
                 throw new IdParametersBadRequestException();
 
-            var clientEntities = _repository.Client.GetByIds(ids, trackChanges);
+            var clientEntities = _repository.Client.GetByIds(ids, trackChanges, includeFounders);
 
             if (ids.Count() != clientEntities.Count())
                 throw new CollectionByIdsBadRequestException();
