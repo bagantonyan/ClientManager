@@ -1,6 +1,7 @@
 ﻿using ClientManager.Core.Domain.Entities;
 using ClientManager.Core.Domain.Repositories;
 using Microsoft.EntityFrameworkCore;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
 
 namespace ClientManager.Infrastructure.Persistence.Repositories
 {
@@ -50,5 +51,7 @@ namespace ClientManager.Infrastructure.Persistence.Repositories
 
             return query.ToList();
         }
+
+        public void DeleteClient(Client client) => Delete(client);
     }
 }

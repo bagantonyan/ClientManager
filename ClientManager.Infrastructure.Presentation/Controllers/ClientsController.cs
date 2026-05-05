@@ -57,5 +57,13 @@ namespace ClientManager.Infrastructure.Presentation.Controllers
 
             return CreatedAtRoute("ClientCollection", new { result.ids }, result.clients);
         }
+
+        [HttpDelete("{id:guid}")]
+        public IActionResult DeleteClient(Guid id)
+        {
+            _service.ClientService.DeleteClient(id, trackChanges: false);
+
+            return NoContent();
+        }
     }
 }

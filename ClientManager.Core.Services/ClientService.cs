@@ -106,5 +106,17 @@ namespace ClientManager.Core.Services
 
             return (clients: clientCollectionToReturn, ids: ids);
         }
+
+        public void DeleteClient(Guid clientId, bool trackChanges)
+        {
+            var client = _repository.Client.GetClient(clientId, trackChanges, includeFounders: false);
+
+            if (client is null)
+                throw new ClientNotFoundException(clientId);
+
+            _repository.Client.DeleteClient(client);
+
+            _repository.Save();
+        }
     }
 }

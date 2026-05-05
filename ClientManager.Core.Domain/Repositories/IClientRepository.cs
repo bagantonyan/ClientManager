@@ -8,5 +8,6 @@ namespace ClientManager.Core.Domain.Repositories
         Client GetClient(Guid clientId, bool trackChanges, bool includeFounders);
         void CreateClient(Client client);
         IEnumerable<Client> GetByIds(IEnumerable<Guid> ids, bool trackChanges, bool includeFounders);
+        void DeleteClient(Client client);
     }
 }
