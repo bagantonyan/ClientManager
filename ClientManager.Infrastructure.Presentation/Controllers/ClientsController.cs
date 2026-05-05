@@ -1,4 +1,5 @@
 ﻿using ClientManager.Core.Services.Abstractions;
+using ClientManager.Infrastructure.Presentation.ModelBinders;
 using Microsoft.AspNetCore.Mvc;
 using Shared.DataTransferObjects.Clients;
 
@@ -37,6 +38,22 @@ namespace ClientManager.Infrastructure.Presentation.Controllers
             var createdClient = _service.ClientService.CreateClient(client);
 
             return CreatedAtRoute("ClientById", new { id = createdClient.Id }, createdClient);
+        }
+
+        [HttpGet("collection/({ids})", Name = "ClientCollection")]
+        public IActionResult GetClientCollection([ModelBinder(BinderType = typeof(ArrayModelBinder))] IEnumerable<Guid> ids)
+        {
+            var companies = _service.ClientService.GetByIds(ids, trackChanges: false);
+
+            return Ok(companies);
+        }
+
+        [HttpPost("collection")]
+        public IActionResult CreateClientCollection([FromBody] IEnumerable<ClientForCreationDto> clientCollection)
+        {
+            var result = _service.ClientService.CreateClientCollection(clientCollection);
+
+            return CreatedAtRoute("ClientCollection", new { result.ids }, result.clients);
         }
     }
 }

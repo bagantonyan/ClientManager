@@ -62,5 +62,49 @@ namespace ClientManager.Core.Services
 
             return clientToReturn;
         }
+
+        public IEnumerable<ClientDto> GetByIds(IEnumerable<Guid> ids, bool trackChanges)
+        {
+            if (ids is null)
+                throw new IdParametersBadRequestException();
+
+            var clientEntities = _repository.Client.GetByIds(ids, trackChanges);
+
+            if (ids.Count() != clientEntities.Count())
+                throw new CollectionByIdsBadRequestException();
+
+            var clientsToReturn = _mapper.Map<IEnumerable<ClientDto>>(clientEntities);
+
+            return clientsToReturn;
+        }
+
+        public (IEnumerable<ClientDto> clients, string ids) CreateClientCollection(IEnumerable<ClientForCreationDto> clientCollection)
+        {
+            if (clientCollection is null)
+                throw new ClientCollectionBadRequest();
+
+            foreach (var client in clientCollection)
+            {
+                if (client.Founders is not null
+                    && client.Founders.Any()
+                    && client.ClientType != ClientType.Legal_Entity)
+                    throw new FounderNotAllowedForClientException();
+            }
+
+            var clientEntities = _mapper.Map<IEnumerable<Client>>(clientCollection);
+
+            foreach (var client in clientEntities)
+            {
+                _repository.Client.CreateClient(client);
+            }
+
+            _repository.Save();
+
+            var clientCollectionToReturn = _mapper.Map<IEnumerable<ClientDto>>(clientEntities);
+
+            var ids = string.Join(",", clientCollectionToReturn.Select(c => c.Id));
+
+            return (clients: clientCollectionToReturn, ids: ids);
+        }
     }
 }
