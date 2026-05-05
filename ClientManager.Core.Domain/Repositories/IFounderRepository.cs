@@ -6,6 +6,6 @@ namespace ClientManager.Core.Domain.Repositories
     {
         IEnumerable<Founder> GetFounders(Guid clientId, bool trackChanges);
         Founder GetFounder(Guid clientId, Guid id, bool trackChanges);
-        void CreateFounderForClient(Guid clientId, Founder founder);
+        void CreateFounderForClient(Client client, Founder founder);
     }
 }

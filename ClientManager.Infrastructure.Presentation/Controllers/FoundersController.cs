@@ -34,9 +34,9 @@ namespace ClientManager.Infrastructure.Presentation.Controllers
             if (founder is null)
                 return BadRequest("FounderForCreationDto object is null");
 
-            var founderToReturn = _service.FounderService.CreateFounderForClient(clientId, founder, trackChanges: true);
+            var founderToReturn = _service.FounderService.CreateFounderForClient(clientId, founder, trackChanges: false);
 
-            return CreatedAtRoute("GetEmployeeForCompany", new { clientId, id = founderToReturn.Id }, founderToReturn);
+            return CreatedAtRoute("GetFounderForClient", new { clientId, id = founderToReturn.Id }, founderToReturn);
         }
     }
 }

@@ -5,7 +5,7 @@ using ClientManager.Core.Domain.Repositories;
 using ClientManager.Core.Services.Abstractions;
 using LoggingService;
 using Shared.DataTransferObjects.Founders;
-using System.ComponentModel.Design;
+using Shared.Enums;
 
 namespace ClientManager.Core.Services
 {
@@ -57,14 +57,17 @@ namespace ClientManager.Core.Services
 
         public FounderDto CreateFounderForClient(Guid clientId, FounderForCreationDto founderForCreation, bool trackChanges)
         {
-            var client = _repository.Client.GetClient(clientId, trackChanges, false);
+            var client = _repository.Client.GetClient(clientId, trackChanges: true, includeFounders: false);
 
             if (client is null)
                 throw new ClientNotFoundException(clientId);
 
+            if (client.ClientType != ClientType.Legal_Entity)
+                throw new FounderNotAllowedForClientException(clientId);
+
             var founderEntity = _mapper.Map<Founder>(founderForCreation);
 
-            _repository.Founder.CreateFounderForClient(clientId, founderEntity);
+            _repository.Founder.CreateFounderForClient(client, founderEntity);
 
             _repository.Save();
 

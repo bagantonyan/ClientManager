@@ -22,11 +22,11 @@ namespace ClientManager.Infrastructure.Persistence.Repositories
                     trackChanges)
                 .SingleOrDefault()!;
 
-        public void CreateFounderForClient(Guid clientId, Founder founder)
+        public void CreateFounderForClient(Client client, Founder founder)
         {
             founder.ClientFounders = new List<ClientFounder>
             {
-                new ClientFounder { ClientId = clientId }
+                new ClientFounder { Client = client }
             };
 
             Create(founder);
