@@ -34,9 +34,17 @@ namespace ClientManager.Infrastructure.Presentation.Controllers
             if (founder is null)
                 return BadRequest("FounderForCreationDto object is null");
 
-            var founderToReturn = _service.FounderService.CreateFounderForClient(clientId, founder, trackChanges: false);
+            var founderToReturn = _service.FounderService.CreateFounderForClient(clientId, founder, trackChanges: true);
 
             return CreatedAtRoute("GetFounderForClient", new { clientId, id = founderToReturn.Id }, founderToReturn);
+        }
+
+        [HttpDelete("{id:guid}")]
+        public IActionResult DeleteFounderForClient(Guid clientId, Guid id)
+        {
+            _service.FounderService.DeleteFounderForClient(clientId, id, trackChanges: true);
+
+            return NoContent();
         }
     }
 }

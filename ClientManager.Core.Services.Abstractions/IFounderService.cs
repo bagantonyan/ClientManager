@@ -7,5 +7,6 @@ namespace ClientManager.Core.Services.Abstractions
         IEnumerable<FounderDto> GetFounders(Guid clientId, bool trackChanges);
         FounderDto GetFounder(Guid clientId, Guid id, bool trackChanges);
         FounderDto CreateFounderForClient(Guid clientId, FounderForCreationDto founderForCreation, bool trackChanges);
+        void DeleteFounderForClient(Guid clientId, Guid id, bool trackChanges);
     }
 }

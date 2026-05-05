@@ -57,7 +57,7 @@ namespace ClientManager.Core.Services
 
         public FounderDto CreateFounderForClient(Guid clientId, FounderForCreationDto founderForCreation, bool trackChanges)
         {
-            var client = _repository.Client.GetClient(clientId, trackChanges: true, includeFounders: false);
+            var client = _repository.Client.GetClient(clientId, trackChanges, includeFounders: false);
 
             if (client is null)
                 throw new ClientNotFoundException(clientId);
@@ -74,6 +74,27 @@ namespace ClientManager.Core.Services
             var founderToReturn = _mapper.Map<FounderDto>(founderEntity);
 
             return founderToReturn;
+        }
+
+        public void DeleteFounderForClient(Guid clientId, Guid id, bool trackChanges)
+        {
+            var client = _repository.Client.GetClient(clientId, trackChanges: true, includeFounders: false);
+
+            if (client is null)
+                throw new ClientNotFoundException(clientId);
+
+            var founder = _repository.Founder.GetFounderWithLinks(clientId, id, trackChanges: true);
+
+            if (founder is null)
+                throw new FounderNotFoundException(id);
+
+            var linkToRemove = founder.ClientFounders!.Single(cf => cf.ClientId.Equals(clientId));
+            founder.ClientFounders!.Remove(linkToRemove);
+
+            if (founder.ClientFounders!.Count == 0)
+                _repository.Founder.DeleteFounder(founder);
+
+            _repository.Save();
         }
     }
 }
