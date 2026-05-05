@@ -78,7 +78,7 @@ namespace ClientManager.Core.Services
 
         public void DeleteFounderForClient(Guid clientId, Guid id, bool trackChanges)
         {
-            var client = _repository.Client.GetClient(clientId, trackChanges: true, includeFounders: false);
+            var client = _repository.Client.GetClient(clientId, trackChanges: true, includeFounders: true);
 
             if (client is null)
                 throw new ClientNotFoundException(clientId);
@@ -87,6 +87,10 @@ namespace ClientManager.Core.Services
 
             if (founder is null)
                 throw new FounderNotFoundException(id);
+
+            if (client.ClientType == ClientType.Legal_Entity
+                && client.ClientFounders!.Count <= 1)
+                throw new LegalEntityWithoutFoundersException();
 
             var linkToRemove = founder.ClientFounders!.Single(cf => cf.ClientId.Equals(clientId));
             founder.ClientFounders!.Remove(linkToRemove);
