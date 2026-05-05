@@ -47,10 +47,7 @@ namespace ClientManager.Core.Services
 
         public ClientDto CreateClient(ClientForCreationDto client)
         {
-            if (client.Founders is not null
-                && client.Founders.Any()
-                && client.ClientType != ClientType.Legal_Entity)
-                throw new FounderNotAllowedForClientException();
+            ValidateFoundersByClientType(client);
 
             var clientEntity = _mapper.Map<Client>(client);
 
@@ -84,12 +81,7 @@ namespace ClientManager.Core.Services
                 throw new ClientCollectionBadRequest();
 
             foreach (var client in clientCollection)
-            {
-                if (client.Founders is not null
-                    && client.Founders.Any()
-                    && client.ClientType != ClientType.Legal_Entity)
-                    throw new FounderNotAllowedForClientException();
-            }
+                ValidateFoundersByClientType(client);
 
             var clientEntities = _mapper.Map<IEnumerable<Client>>(clientCollection);
 
@@ -105,6 +97,17 @@ namespace ClientManager.Core.Services
             var ids = string.Join(",", clientCollectionToReturn.Select(c => c.Id));
 
             return (clients: clientCollectionToReturn, ids: ids);
+        }
+
+        private static void ValidateFoundersByClientType(ClientForCreationDto client)
+        {
+            var hasFounders = client.Founders is not null && client.Founders.Any();
+
+            if (client.ClientType == ClientType.Legal_Entity && !hasFounders)
+                throw new LegalEntityWithoutFoundersException();
+
+            if (client.ClientType != ClientType.Legal_Entity && hasFounders)
+                throw new FounderNotAllowedForClientException();
         }
 
         public void DeleteClient(Guid clientId)
