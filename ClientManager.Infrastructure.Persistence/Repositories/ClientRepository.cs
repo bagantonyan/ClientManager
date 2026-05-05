@@ -1,6 +1,6 @@
 ﻿using ClientManager.Core.Domain.Entities;
 using ClientManager.Core.Domain.Repositories;
-using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
+using Microsoft.EntityFrameworkCore;
 
 namespace ClientManager.Infrastructure.Persistence.Repositories
 {
@@ -13,11 +13,15 @@ namespace ClientManager.Infrastructure.Persistence.Repositories
 
         public IEnumerable<Client> GetAllClients(bool trackChanges) =>
             FindAll(trackChanges)
+                .Include(c => c.ClientFounders!)
+                    .ThenInclude(cf => cf.Founder)
                 .OrderBy(c => c.Name)
                 .ToList();
 
         public Client GetClient(Guid clientId, bool trackChanges) =>
             FindByCondition(c => c.Id.Equals(clientId), trackChanges)
+                .Include(c => c.ClientFounders!)
+                    .ThenInclude(cf => cf.Founder)
                 .SingleOrDefault()!;
     }
 }

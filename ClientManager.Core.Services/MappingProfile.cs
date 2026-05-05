@@ -9,7 +9,9 @@ namespace ClientManager.Core.Services
     {
         public MappingProfile()
         {
-            CreateMap<Client, ClientDto>();
+            CreateMap<Client, ClientDto>()
+                .ForMember(d => d.Founders,
+                    opt => opt.MapFrom(s => s.ClientFounders!.Select(cf => cf.Founder)));
             CreateMap<Founder, FounderDto>();
         }
     }

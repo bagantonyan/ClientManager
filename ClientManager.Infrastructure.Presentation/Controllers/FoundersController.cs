@@ -12,7 +12,7 @@ namespace ClientManager.Infrastructure.Presentation.Controllers
         public FoundersController(IServiceManager service) => _service = service;
 
         [HttpGet]
-        public IActionResult GetEmployeesForCompany(Guid clientId)
+        public IActionResult GetFoundersForClient(Guid clientId)
         {
             var founders = _service.FounderService.GetFounders(clientId, trackChanges: false);
 

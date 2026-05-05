@@ -1,4 +1,5 @@
-﻿using Shared.Enums;
+﻿using Shared.DataTransferObjects.Founders;
+using Shared.Enums;
 
 namespace Shared.DataTransferObjects.Clients
 {
@@ -8,5 +9,6 @@ namespace Shared.DataTransferObjects.Clients
         public string? INN { get; init; }
         public string? Name { get; init; }
         public ClientType ClientType { get; init; }
+        public IEnumerable<FounderDto>? Founders { get; init; }
     }
 }
