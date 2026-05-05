@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using ClientManager.Core.Domain.Entities;
 using ClientManager.Core.Domain.Exceptions;
 using ClientManager.Core.Domain.Repositories;
 using ClientManager.Core.Services.Abstractions;
@@ -41,6 +42,19 @@ namespace ClientManager.Core.Services
             var clientDto = _mapper.Map<ClientDto>(client);
 
             return clientDto;
+        }
+
+        public ClientDto CreateClient(ClientForCreationDto client)
+        {
+            var clientEntity = _mapper.Map<Client>(client);
+
+            _repository.Client.CreateClient(clientEntity);
+
+            _repository.Save();
+
+            var clientToReturn = _mapper.Map<ClientDto>(clientEntity);
+
+            return clientToReturn;
         }
     }
 }

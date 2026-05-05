@@ -12,7 +12,10 @@ namespace ClientManager.Core.Services
             CreateMap<Client, ClientDto>()
                 .ForMember(d => d.Founders,
                     opt => opt.MapFrom(s => s.ClientFounders!.Select(cf => cf.Founder)));
+
             CreateMap<Founder, FounderDto>();
+
+            CreateMap<ClientForCreationDto, Client>();
         }
     }
 }

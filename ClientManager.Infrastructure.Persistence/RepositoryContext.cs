@@ -20,6 +20,13 @@ namespace ClientManager.Infrastructure.Persistence
             modelBuilder.ApplyConfigurationsFromAssembly(typeof(RepositoryContext).Assembly);
         }
 
+        public override int SaveChanges()
+        {
+            ChangeTracker.SetAuditProperties();
+
+            return base.SaveChanges();
+        }
+
         public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         {
             ChangeTracker.SetAuditProperties();

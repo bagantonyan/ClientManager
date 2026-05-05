@@ -36,5 +36,7 @@ namespace ClientManager.Infrastructure.Persistence.Repositories
 
             return query.SingleOrDefault()!;
         }
+
+        public void CreateClient(Client client) => Create(client);
     }
 }

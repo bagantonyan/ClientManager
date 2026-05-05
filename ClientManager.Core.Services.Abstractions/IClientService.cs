@@ -6,5 +6,6 @@ namespace ClientManager.Core.Services.Abstractions
     {
         IEnumerable<ClientDto> GetAllClients(bool trackChanges, bool includeFounders);
         ClientDto GetClient(Guid clientId, bool trackChanges, bool includeFounders);
+        ClientDto CreateClient(ClientForCreationDto client);
     }
 }

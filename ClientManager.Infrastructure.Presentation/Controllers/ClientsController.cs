@@ -1,5 +1,6 @@
 ﻿using ClientManager.Core.Services.Abstractions;
 using Microsoft.AspNetCore.Mvc;
+using Shared.DataTransferObjects.Clients;
 
 namespace ClientManager.Infrastructure.Presentation.Controllers
 {
@@ -19,12 +20,23 @@ namespace ClientManager.Infrastructure.Presentation.Controllers
             return Ok(clients);
         }
 
-        [HttpGet("{id:guid}")]
+        [HttpGet("{id:guid}", Name = "ClientById")]
         public IActionResult GetClient(Guid id, [FromQuery] bool includeFounders = true)
         {
             var client = _service.ClientService.GetClient(id, trackChanges: false, includeFounders);
 
             return Ok(client);
+        }
+
+        [HttpPost]
+        public IActionResult CreateClient([FromBody] ClientForCreationDto client)
+        {
+            if (client is null)
+                return BadRequest("ClientForCreationDto object is null");
+
+            var createdClient = _service.ClientService.CreateClient(client);
+
+            return CreatedAtRoute("ClientById", new { id = createdClient.Id }, createdClient);
         }
     }
 }

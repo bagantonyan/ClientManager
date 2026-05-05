@@ -1,6 +1,7 @@
 using ClientManager.Core.Services;
 using ClientManager.Extensions;
 using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.AspNetCore.Mvc;
 using Serilog;
 
 namespace ClientManager
@@ -26,6 +27,11 @@ namespace ClientManager
             builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 
             builder.Services.AddProblemDetails();
+
+            builder.Services.Configure<ApiBehaviorOptions>(options =>
+            {
+                options.SuppressModelStateInvalidFilter = true;
+            });
 
             builder.Services.AddControllers()
                 .AddApplicationPart(typeof(ClientManager.Infrastructure.Presentation.AssemblyReference).Assembly);

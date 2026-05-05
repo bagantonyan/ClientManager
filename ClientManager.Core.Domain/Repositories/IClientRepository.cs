@@ -6,5 +6,6 @@ namespace ClientManager.Core.Domain.Repositories
     {
         IEnumerable<Client> GetAllClients(bool trackChanges, bool includeFounders);
         Client GetClient(Guid clientId, bool trackChanges, bool includeFounders);
+        void CreateClient(Client client);
     }
 }
