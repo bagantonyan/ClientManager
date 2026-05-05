@@ -15,9 +15,14 @@ namespace ClientManager.Core.Services
 
             CreateMap<Founder, FounderDto>();
 
-            CreateMap<ClientForCreationDto, Client>();
+            CreateMap<ClientForCreationDto, Client>()
+                .ForMember(d => d.ClientFounders,
+                    opt => opt.MapFrom(s => s.Founders));
 
             CreateMap<FounderForCreationDto, Founder>();
+
+            CreateMap<FounderForCreationDto, ClientFounder>()
+                .ForMember(cf => cf.Founder, opt => opt.MapFrom(src => src));
         }
     }
 }

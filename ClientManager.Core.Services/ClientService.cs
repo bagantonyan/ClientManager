@@ -5,6 +5,7 @@ using ClientManager.Core.Domain.Repositories;
 using ClientManager.Core.Services.Abstractions;
 using LoggingService;
 using Shared.DataTransferObjects.Clients;
+using Shared.Enums;
 
 namespace ClientManager.Core.Services
 {
@@ -46,6 +47,11 @@ namespace ClientManager.Core.Services
 
         public ClientDto CreateClient(ClientForCreationDto client)
         {
+            if (client.Founders is not null
+                && client.Founders.Any()
+                && client.ClientType != ClientType.Legal_Entity)
+                throw new FounderNotAllowedForClientException();
+
             var clientEntity = _mapper.Map<Client>(client);
 
             _repository.Client.CreateClient(clientEntity);
