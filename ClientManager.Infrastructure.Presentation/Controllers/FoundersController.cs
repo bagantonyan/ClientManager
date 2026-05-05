@@ -18,5 +18,13 @@ namespace ClientManager.Infrastructure.Presentation.Controllers
 
             return Ok(founders);
         }
+
+        [HttpGet("{id:guid}")]
+        public IActionResult GetFounderForClient(Guid clientId, Guid id)
+        {
+            var founder = _service.FounderService.GetFounder(clientId, id, trackChanges: false);
+
+            return Ok(founder);
+        }
     }
 }

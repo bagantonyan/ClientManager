@@ -4,6 +4,7 @@ using ClientManager.Core.Domain.Repositories;
 using ClientManager.Core.Services.Abstractions;
 using LoggingService;
 using Shared.DataTransferObjects.Founders;
+using System.ComponentModel.Design;
 
 namespace ClientManager.Core.Services
 {
@@ -34,6 +35,23 @@ namespace ClientManager.Core.Services
             var foundersDto = _mapper.Map<IEnumerable<FounderDto>>(foundersFromDb);
 
             return foundersDto;
+        }
+
+        public FounderDto GetFounder(Guid clientId, Guid id, bool trackChanges)
+        {
+            var client = _repository.Client.GetClient(clientId, trackChanges, false);
+
+            if (client is null)
+                throw new ClientNotFoundException(clientId);
+
+            var founderDb = _repository.Founder.GetFounder(clientId, id, trackChanges);
+
+            if (founderDb is null)
+                throw new FounderNotFoundException(id);
+
+            var founder = _mapper.Map<FounderDto>(founderDb);
+
+            return founder;
         }
     }
 }

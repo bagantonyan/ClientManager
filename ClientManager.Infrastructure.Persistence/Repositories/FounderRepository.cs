@@ -14,5 +14,12 @@ namespace ClientManager.Infrastructure.Persistence.Repositories
             FindByCondition(f => f.ClientFounders!.Any(cf => cf.ClientId.Equals(clientId)), trackChanges)
                 .OrderBy(f => f.FullName)
                 .ToList();
+
+        public Founder GetFounder(Guid clientId, Guid id, bool trackChanges) =>
+            FindByCondition(
+                    f => f.Id.Equals(id)
+                      && f.ClientFounders!.Any(cf => cf.ClientId.Equals(clientId)),
+                    trackChanges)
+                .SingleOrDefault()!;
     }
 }
