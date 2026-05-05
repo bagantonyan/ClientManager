@@ -9,5 +9,10 @@ namespace ClientManager.Infrastructure.Persistence.Repositories
             : base(repositoryContext)
         {
         }
+
+        public IEnumerable<Founder> GetFounders(Guid clientId, bool trackChanges) =>
+            FindByCondition(f => f.ClientFounders!.Any(cf => cf.ClientId.Equals(clientId)), trackChanges)
+                .OrderBy(f => f.FullName)
+                .ToList();
     }
 }

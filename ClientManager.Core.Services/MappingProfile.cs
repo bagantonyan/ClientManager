@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using ClientManager.Core.Domain.Entities;
 using Shared.DataTransferObjects.Clients;
+using Shared.DataTransferObjects.Founders;
 
 namespace ClientManager.Core.Services
 {
@@ -9,6 +10,7 @@ namespace ClientManager.Core.Services
         public MappingProfile()
         {
             CreateMap<Client, ClientDto>();
+            CreateMap<Founder, FounderDto>();
         }
     }
 }
