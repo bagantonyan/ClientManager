@@ -24,7 +24,7 @@ namespace ClientManager.Core.Services
 
         public IEnumerable<FounderDto> GetFounders(Guid clientId, bool trackChanges)
         {
-            var client = _repository.Client.GetClient(clientId, trackChanges);
+            var client = _repository.Client.GetClient(clientId, trackChanges, includeFounders: false);
 
             if (client is null)
                 throw new ClientNotFoundException(clientId);

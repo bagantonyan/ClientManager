@@ -22,18 +22,18 @@ namespace ClientManager.Core.Services
             _mapper = mapper;
         }
 
-        public IEnumerable<ClientDto> GetAllClients(bool trackChanges)
+        public IEnumerable<ClientDto> GetAllClients(bool trackChanges, bool includeFounders)
         {
-            var clients = _repository.Client.GetAllClients(trackChanges);
+            var clients = _repository.Client.GetAllClients(trackChanges, includeFounders);
 
             var clientsDto = _mapper.Map<IEnumerable<ClientDto>>(clients);
 
             return clientsDto;
         }
 
-        public ClientDto GetClient(Guid id, bool trackChanges)
+        public ClientDto GetClient(Guid id, bool trackChanges, bool includeFounders)
         {
-            var client = _repository.Client.GetClient(id, trackChanges);
+            var client = _repository.Client.GetClient(id, trackChanges, includeFounders);
 
             if (client is null)
                 throw new ClientNotFoundException(id);

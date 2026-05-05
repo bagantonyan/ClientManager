@@ -4,7 +4,7 @@ namespace ClientManager.Core.Domain.Repositories
 {
     public interface IClientRepository
     {
-        IEnumerable<Client> GetAllClients(bool trackChanges);
-        Client GetClient(Guid clientId, bool trackChanges);
+        IEnumerable<Client> GetAllClients(bool trackChanges, bool includeFounders);
+        Client GetClient(Guid clientId, bool trackChanges, bool includeFounders);
     }
 }
