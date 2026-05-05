@@ -61,7 +61,7 @@ namespace ClientManager.Infrastructure.Presentation.Controllers
         [HttpDelete("{id:guid}")]
         public IActionResult DeleteClient(Guid id)
         {
-            _service.ClientService.DeleteClient(id, trackChanges: false);
+            _service.ClientService.DeleteClient(id);
 
             return NoContent();
         }

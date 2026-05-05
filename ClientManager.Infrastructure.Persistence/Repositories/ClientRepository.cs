@@ -52,6 +52,13 @@ namespace ClientManager.Infrastructure.Persistence.Repositories
             return query.ToList();
         }
 
+        public Client GetClientForDeletion(Guid clientId) =>
+            FindByCondition(c => c.Id.Equals(clientId), trackChanges: true)
+                .Include(c => c.ClientFounders!)
+                    .ThenInclude(cf => cf.Founder)
+                        .ThenInclude(f => f!.ClientFounders)
+                .SingleOrDefault()!;
+
         public void DeleteClient(Client client) => Delete(client);
     }
 }

@@ -9,6 +9,6 @@ namespace ClientManager.Core.Services.Abstractions
         ClientDto CreateClient(ClientForCreationDto client);
         IEnumerable<ClientDto> GetByIds(IEnumerable<Guid> ids, bool trackChanges, bool includeFounders);
         (IEnumerable<ClientDto> clients, string ids) CreateClientCollection(IEnumerable<ClientForCreationDto> clientCollection);
-        void DeleteClient(Guid clientId, bool trackChanges);
+        void DeleteClient(Guid clientId);
     }
 }

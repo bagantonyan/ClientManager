@@ -107,12 +107,28 @@ namespace ClientManager.Core.Services
             return (clients: clientCollectionToReturn, ids: ids);
         }
 
-        public void DeleteClient(Guid clientId, bool trackChanges)
+        public void DeleteClient(Guid clientId)
         {
-            var client = _repository.Client.GetClient(clientId, trackChanges, includeFounders: false);
+            var client = _repository.Client.GetClientForDeletion(clientId);
 
             if (client is null)
                 throw new ClientNotFoundException(clientId);
+
+            if (client.ClientFounders is not null)
+            {
+                foreach (var link in client.ClientFounders.ToList())
+                {
+                    var founder = link.Founder;
+
+                    client.ClientFounders.Remove(link);
+
+                    if (founder is not null
+                        && !founder.ClientFounders!.Any(cf => cf.ClientId != clientId))
+                    {
+                        _repository.Founder.DeleteFounder(founder);
+                    }
+                }
+            }
 
             _repository.Client.DeleteClient(client);
 
