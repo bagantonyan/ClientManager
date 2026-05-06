@@ -100,5 +100,22 @@ namespace ClientManager.Core.Services
 
             await _repository.SaveAsync(ct);
         }
+
+        public async Task UpdateFounderForClientAsync(Guid clientId, Guid id, FounderForUpdateDto founderForUpdate, bool clientTrackChanges, bool founderTrackChanges, CancellationToken ct = default)
+        {
+            var client = await _repository.Client.GetClientAsync(clientId, clientTrackChanges, includeFounders: false, ct);
+
+            if (client is null)
+                throw new ClientNotFoundException(clientId);
+
+            var founderEntity = await _repository.Founder.GetFounderAsync(clientId, id, founderTrackChanges, ct);
+
+            if (founderEntity is null)
+                throw new FounderNotFoundException(id);
+
+            _mapper.Map(founderForUpdate, founderEntity);
+
+            await _repository.SaveAsync(ct);
+        }
     }
 }
