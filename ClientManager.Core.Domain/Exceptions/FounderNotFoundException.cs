@@ -2,8 +2,8 @@
 {
     public class FounderNotFoundException : NotFoundException
     {
-        public FounderNotFoundException(Guid employeeId)
-            : base($"Founder with id: {employeeId} doesn't exist in the database.")
+        public FounderNotFoundException(Guid founderId)
+            : base($"Founder with id: {founderId} doesn't exist in the database.")
         {
         }
     }

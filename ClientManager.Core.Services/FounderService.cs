@@ -101,7 +101,7 @@ namespace ClientManager.Core.Services
             await _repository.SaveAsync(ct);
         }
 
-        public async Task UpdateFounderForClientAsync(Guid clientId, Guid id, FounderForUpdateDto founderForUpdate, bool clientTrackChanges, bool founderTrackChanges, CancellationToken ct = default)
+        public async Task<(FounderForUpdateDto founderToPatch, Founder founderEntity)> GetFounderForPatchAsync(Guid clientId, Guid id, bool clientTrackChanges, bool founderTrackChanges, CancellationToken ct = default)
         {
             var client = await _repository.Client.GetClientAsync(clientId, clientTrackChanges, includeFounders: false, ct);
 
@@ -113,7 +113,14 @@ namespace ClientManager.Core.Services
             if (founderEntity is null)
                 throw new FounderNotFoundException(id);
 
-            _mapper.Map(founderForUpdate, founderEntity);
+            var founderToPatch = _mapper.Map<FounderForUpdateDto>(founderEntity);
+
+            return (founderToPatch, founderEntity);
+        }
+
+        public async Task SaveChangesForPatchAsync(FounderForUpdateDto founderToPatch, Founder founderEntity, CancellationToken ct = default)
+        {
+            _mapper.Map(founderToPatch, founderEntity);
 
             await _repository.SaveAsync(ct);
         }

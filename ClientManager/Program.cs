@@ -2,6 +2,8 @@ using ClientManager.Core.Services;
 using ClientManager.Extensions;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Formatters;
+using Microsoft.Extensions.Options;
 using Serilog;
 
 namespace ClientManager
@@ -33,8 +35,10 @@ namespace ClientManager
                 options.SuppressModelStateInvalidFilter = true;
             });
 
-            builder.Services.AddControllers()
-                .AddApplicationPart(typeof(ClientManager.Infrastructure.Presentation.AssemblyReference).Assembly);
+            builder.Services.AddControllers(config =>
+            {
+                config.InputFormatters.Insert(0, GetJsonPatchInputFormatter());
+            }).AddApplicationPart(typeof(ClientManager.Infrastructure.Presentation.AssemblyReference).Assembly);
 
             builder.Services.ConfigureSwagger();
 
@@ -75,5 +79,11 @@ namespace ClientManager
 
             app.Run();
         }
+
+        static NewtonsoftJsonPatchInputFormatter GetJsonPatchInputFormatter() =>
+            new ServiceCollection().AddLogging().AddMvc().AddNewtonsoftJson()
+            .Services.BuildServiceProvider()
+            .GetRequiredService<IOptions<MvcOptions>>().Value.InputFormatters
+            .OfType<NewtonsoftJsonPatchInputFormatter>().First();
     }
 }

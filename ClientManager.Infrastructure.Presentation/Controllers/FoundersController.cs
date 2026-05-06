@@ -1,4 +1,5 @@
 ﻿using ClientManager.Core.Services.Abstractions;
+using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
 using Shared.DataTransferObjects.Founders;
 
@@ -47,13 +48,17 @@ namespace ClientManager.Infrastructure.Presentation.Controllers
             return NoContent();
         }
 
-        [HttpPut("{id:guid}")]
-        public async Task<IActionResult> UpdateFounderForClient(Guid clientId, Guid id, [FromBody] FounderForUpdateDto founder, CancellationToken ct)
+        [HttpPatch("{id:guid}")]
+        public async Task<IActionResult> PartiallyUpdateFounderForClient(Guid clientId, Guid id, [FromBody] JsonPatchDocument<FounderForUpdateDto> patchDoc, CancellationToken ct)
         {
-            if (founder is null)
-                return BadRequest("FounderForUpdateDto object is null");
+            if (patchDoc is null)
+                return BadRequest("patchDoc object sent from client is null.");
 
-            await _service.FounderService.UpdateFounderForClientAsync(clientId, id, founder, clientTrackChanges: false, founderTrackChanges: true, ct);
+            var result = await _service.FounderService.GetFounderForPatchAsync(clientId, id, clientTrackChanges: false, founderTrackChanges: true, ct);
+
+            patchDoc.ApplyTo(result.founderToPatch);
+
+            await _service.FounderService.SaveChangesForPatchAsync(result.founderToPatch, result.founderEntity);
 
             return NoContent();
         }
