@@ -1,5 +1,6 @@
 ﻿using ClientManager.Core.Services.Abstractions;
 using ClientManager.Infrastructure.Presentation.ModelBinders;
+using ClientManager.Infrastructure.Presentation.Validators;
 using FluentValidation;
 using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
@@ -61,9 +62,21 @@ namespace ClientManager.Infrastructure.Presentation.Controllers
         }
 
         [HttpPost("collection")]
-        public async Task<IActionResult> CreateClientCollection([FromBody] IEnumerable<ClientForCreationDto> clientCollection, CancellationToken ct)
+        public async Task<IActionResult> CreateClientCollection(
+            [FromBody] IEnumerable<ClientForCreationDto> clientCollection,
+            [FromServices] IValidator<ClientForCreationDto> validator,
+            CancellationToken ct)
         {
-            var result = await _service.ClientService.CreateClientCollectionAsync(clientCollection, ct);
+            if (clientCollection is null)
+                return BadRequest("ClientCollection object is null");
+
+            var clients = clientCollection.ToList();
+
+            var errors = validator.ValidateCollection(clients);
+            if (errors.Count > 0)
+                return UnprocessableEntity(errors);
+
+            var result = await _service.ClientService.CreateClientCollectionAsync(clients, ct);
 
             return CreatedAtRoute("ClientCollection", new { result.ids }, result.clients);
         }
