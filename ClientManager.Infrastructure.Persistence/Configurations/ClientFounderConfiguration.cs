@@ -5,14 +5,12 @@ using Shared.Enums;
 
 namespace ClientManager.Infrastructure.Persistence.Configurations
 {
-    internal class ClientFounderConfiguration : BaseEntityConfiguration<ClientFounder>
+    internal class ClientFounderConfiguration : IEntityTypeConfiguration<ClientFounder>
     {
         private const string ClientTypeShadow = "ClientType";
 
-        public override void Configure(EntityTypeBuilder<ClientFounder> builder)
+        public void Configure(EntityTypeBuilder<ClientFounder> builder)
         {
-            base.Configure(builder);
-
             builder.HasKey(p => new { p.ClientId, p.FounderId });
 
             builder.Property<ClientType>(ClientTypeShadow)

@@ -31,6 +31,12 @@ namespace ClientManager.Infrastructure.Persistence.Repositories
                 .Include(f => f.ClientFounders)
                 .SingleOrDefaultAsync(ct)!;
 
+        public async Task<Founder?> GetByInnIncludingDeletedAsync(string inn, bool trackChanges, CancellationToken ct = default) =>
+            await FindByCondition(f => f.INN == inn, trackChanges)
+                .IgnoreQueryFilters()
+                .Include(f => f.ClientFounders)
+                .FirstOrDefaultAsync(ct);
+
         public void CreateFounderForClient(Client client, Founder founder)
         {
             founder.ClientFounders = new List<ClientFounder>

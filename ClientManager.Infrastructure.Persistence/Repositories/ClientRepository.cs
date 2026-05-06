@@ -58,6 +58,11 @@ namespace ClientManager.Infrastructure.Persistence.Repositories
                         .ThenInclude(f => f!.ClientFounders)
                 .SingleOrDefaultAsync(ct)!;
 
+        public async Task<Client?> GetByInnIncludingDeletedAsync(string inn, bool trackChanges, CancellationToken ct = default) =>
+            await FindByCondition(c => c.INN == inn, trackChanges)
+                .IgnoreQueryFilters()
+                .FirstOrDefaultAsync(ct);
+
         public void DeleteClient(Client client) => Delete(client);
     }
 }

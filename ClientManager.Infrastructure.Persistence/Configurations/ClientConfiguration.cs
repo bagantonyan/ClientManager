@@ -26,7 +26,8 @@ namespace ClientManager.Infrastructure.Persistence.Configurations
                 .HasConversion<int>();
 
             builder.HasIndex(p => p.INN)
-                .IsUnique();
+                .IsUnique()
+                .HasFilter("[DeletedDate] IS NULL");
 
             builder.HasAlternateKey(p => new { p.Id, p.ClientType });
 

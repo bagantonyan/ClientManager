@@ -48,14 +48,36 @@ namespace ClientManager.Core.Services
 
         public async Task<FounderDto> CreateFounderForClientAsync(Guid clientId, FounderForCreationDto founderForCreation, bool trackChanges, CancellationToken ct = default)
         {
-            var client = await GetAndCheckIfClientExistsAsync(clientId, trackChanges, includeFounders: false, ct);
+            var client = await GetAndCheckIfClientExistsAsync(clientId, trackChanges: true, includeFounders: false, ct);
 
             if (client.ClientType != ClientType.Legal_Entity)
                 throw new FounderNotAllowedForClientException(clientId);
 
-            var founderEntity = _mapper.Map<Founder>(founderForCreation);
+            var existing = await _repository.Founder.GetByInnIncludingDeletedAsync(founderForCreation.INN!, trackChanges: true, ct);
 
-            _repository.Founder.CreateFounderForClient(client, founderEntity);
+            Founder founderEntity;
+            if (existing is not null)
+            {
+                // Restore soft-deleted founder if needed
+                if (existing.DeletedDate is not null)
+                {
+                    existing.DeletedDate = null;
+                    existing.FullName = founderForCreation.FullName;
+                }
+
+                // Reuse: ensure the founder isn't already linked to this client
+                existing.ClientFounders ??= new List<ClientFounder>();
+                if (existing.ClientFounders.Any(cf => cf.ClientId == clientId))
+                    throw new FounderAlreadyLinkedToClientException(clientId, existing.Id);
+
+                existing.ClientFounders.Add(new ClientFounder { Client = client });
+                founderEntity = existing;
+            }
+            else
+            {
+                founderEntity = _mapper.Map<Founder>(founderForCreation);
+                _repository.Founder.CreateFounderForClient(client, founderEntity);
+            }
 
             await _repository.SaveAsync(ct);
 

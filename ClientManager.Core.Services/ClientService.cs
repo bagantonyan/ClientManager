@@ -46,15 +46,64 @@ namespace ClientManager.Core.Services
         {
             ValidateFoundersByClientType(client);
 
-            var clientEntity = _mapper.Map<Client>(client);
+            var existing = await _repository.Client.GetByInnIncludingDeletedAsync(client.INN!, trackChanges: true, ct);
 
-            _repository.Client.CreateClient(clientEntity);
+            Client clientEntity;
+            if (existing is not null)
+            {
+                if (existing.DeletedDate is null)
+                    throw new ClientWithSameInnExistsException(client.INN!);
+
+                // Restore the soft-deleted client
+                existing.DeletedDate = null;
+                existing.Name = client.Name;
+                existing.ClientType = client.ClientType;
+                clientEntity = existing;
+            }
+            else
+            {
+                clientEntity = new Client
+                {
+                    INN = client.INN,
+                    Name = client.Name,
+                    ClientType = client.ClientType
+                };
+                _repository.Client.CreateClient(clientEntity);
+            }
+
+            // Resolve each founder by INN: existing (active or restored) → reuse; otherwise → create.
+            // This handles the unique-INN constraint correctly when a person is a founder of multiple clients.
+            if (client.Founders is not null && client.Founders.Any())
+            {
+                var resolved = new List<ClientFounder>();
+                foreach (var founderDto in client.Founders)
+                {
+                    var founder = await ResolveFounderAsync(founderDto, ct);
+                    resolved.Add(new ClientFounder { Founder = founder });
+                }
+                clientEntity.ClientFounders = resolved;
+            }
 
             await _repository.SaveAsync(ct);
 
             var clientToReturn = _mapper.Map<ClientDto>(clientEntity);
 
             return clientToReturn;
+        }
+
+        private async Task<Founder> ResolveFounderAsync(Shared.DataTransferObjects.Founders.FounderForCreationDto dto, CancellationToken ct)
+        {
+            var existing = await _repository.Founder.GetByInnIncludingDeletedAsync(dto.INN!, trackChanges: true, ct);
+            if (existing is not null)
+            {
+                if (existing.DeletedDate is not null)
+                {
+                    existing.DeletedDate = null;
+                    existing.FullName = dto.FullName;
+                }
+                return existing;
+            }
+            return _mapper.Map<Founder>(dto);
         }
 
         public async Task<IEnumerable<ClientDto>> GetByIdsAsync(IEnumerable<Guid> ids, bool trackChanges, bool includeFounders, CancellationToken ct = default)

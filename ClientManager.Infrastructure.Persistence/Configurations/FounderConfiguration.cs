@@ -21,7 +21,8 @@ namespace ClientManager.Infrastructure.Persistence.Configurations
                 .HasMaxLength(500);
 
             builder.HasIndex(p => p.INN)
-                .IsUnique();
+                .IsUnique()
+                .HasFilter("[DeletedDate] IS NULL");
 
             builder.ToTable(t => t.HasCheckConstraint(
                 "CK_Founder_INN_Format",

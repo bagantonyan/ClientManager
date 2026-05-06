@@ -53,10 +53,7 @@ namespace ClientManager.Infrastructure.Persistence.Migrations
                 {
                     ClientId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     FounderId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    ClientType = table.Column<int>(type: "int", nullable: false),
-                    CreatedDate = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    ModifiedDate = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    DeletedDate = table.Column<DateTime>(type: "datetime2", nullable: true)
+                    ClientType = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -90,13 +87,15 @@ namespace ClientManager.Infrastructure.Persistence.Migrations
                 name: "IX_Clients_INN",
                 table: "Clients",
                 column: "INN",
-                unique: true);
+                unique: true,
+                filter: "[DeletedDate] IS NULL");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Founders_INN",
                 table: "Founders",
                 column: "INN",
-                unique: true);
+                unique: true,
+                filter: "[DeletedDate] IS NULL");
         }
 
         /// <inheritdoc />

@@ -1,6 +1,6 @@
-﻿namespace ClientManager.Core.Domain.Entities
+namespace ClientManager.Core.Domain.Entities
 {
-    public class ClientFounder : BaseEntity
+    public class ClientFounder
     {
         public Guid ClientId { get; set; }
         public Client Client { get; set; } = null!;
