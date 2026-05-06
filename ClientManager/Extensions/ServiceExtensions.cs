@@ -1,4 +1,5 @@
-﻿using ClientManager.Core.Domain.Repositories;
+﻿using Asp.Versioning;
+using ClientManager.Core.Domain.Repositories;
 using ClientManager.Core.Services;
 using ClientManager.Core.Services.Abstractions;
 using ClientManager.Infrastructure.Persistence;
@@ -39,6 +40,17 @@ namespace ClientManager.Extensions
             {
                 c.SwaggerDoc("v1", new() { Title = "ClientManager API", Version = "v1" });
             });
+        }
+
+        public static void ConfigureVersioning(this IServiceCollection services)
+        {
+            services.AddApiVersioning(opt =>
+            {
+                opt.ReportApiVersions = true;
+                opt.AssumeDefaultVersionWhenUnspecified = true;
+                opt.DefaultApiVersion = new ApiVersion(1, 0);
+                opt.ApiVersionReader = new HeaderApiVersionReader("api-version");
+            }).AddMvc();
         }
     }
 }

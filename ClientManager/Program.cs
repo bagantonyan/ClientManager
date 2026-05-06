@@ -37,6 +37,8 @@ namespace ClientManager
                 options.SuppressModelStateInvalidFilter = true;
             });
 
+            builder.Services.ConfigureVersioning();
+
             builder.Services.AddControllers(config =>
             {
                 config.InputFormatters.Insert(0, GetJsonPatchInputFormatter());
