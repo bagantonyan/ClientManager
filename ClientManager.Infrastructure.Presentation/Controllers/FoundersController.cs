@@ -8,6 +8,7 @@ namespace ClientManager.Infrastructure.Presentation.Controllers
 {
     [Route("api/clients/{clientId}/founders")]
     [ApiController]
+    [ApiExplorerSettings(GroupName = "v1")]
     public class FoundersController : ControllerBase
     {
         private readonly IServiceManager _service;

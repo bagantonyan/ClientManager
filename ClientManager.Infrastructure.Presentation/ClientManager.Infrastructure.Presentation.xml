@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>ClientManager.Infrastructure.Presentation</name>
+    </assembly>
+    <members>
+        <member name="M:ClientManager.Infrastructure.Presentation.Controllers.ClientsController.GetClients(Shared.RequestFeatures.ClientParameters,System.Threading.CancellationToken,System.Boolean)">
+            <summary>
+            Get all clients
+            </summary>
+            <returns>The clients list</returns>
+        </member>
+        <member name="M:ClientManager.Infrastructure.Presentation.Controllers.ClientsController.CreateClient(Shared.DataTransferObjects.Clients.ClientForCreationDto,FluentValidation.IValidator{Shared.DataTransferObjects.Clients.ClientForCreationDto},System.Threading.CancellationToken)">
+            <summary>
+            Create new client
+            </summary>
+            <returns>A newly created client</returns>
+        </member>
+    </members>
+</doc>

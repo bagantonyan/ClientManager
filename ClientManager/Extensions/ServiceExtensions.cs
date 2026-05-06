@@ -7,6 +7,7 @@ using HealthChecks.UI.Client;
 using LoggingService;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.OpenApi.Models;
 using System.Threading.RateLimiting;
 
 namespace ClientManager.Extensions
@@ -38,10 +39,24 @@ namespace ClientManager.Extensions
 
         public static void ConfigureSwagger(this IServiceCollection services)
         {
-            services.AddEndpointsApiExplorer();
-            services.AddSwaggerGen(c =>
+            services.AddSwaggerGen(s =>
             {
-                c.SwaggerDoc("v1", new() { Title = "ClientManager API", Version = "v1" });
+                s.SwaggerDoc("v1", new OpenApiInfo
+                {
+                    Title = "ClientManager API",
+                    Version = "v1",
+                    Description = "ClientManager API working with clients and founders",
+                    Contact = new OpenApiContact
+                    {
+                        Name = "Bagrat Antonyan",
+                        Email = "bagrat.antonyan.work@mail.ru"
+                    }
+                });
+
+                var xmlFile = $"{typeof(Infrastructure.Presentation.AssemblyReference)
+                .Assembly.GetName().Name}.xml";
+                var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+                s.IncludeXmlComments(xmlPath);
             });
         }
 

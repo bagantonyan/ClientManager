@@ -2,6 +2,7 @@
 using ClientManager.Infrastructure.Presentation.ModelBinders;
 using ClientManager.Infrastructure.Presentation.Validators;
 using FluentValidation;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
@@ -13,12 +14,17 @@ namespace ClientManager.Infrastructure.Presentation.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [ApiExplorerSettings(GroupName = "v1")]
     public class ClientsController : ControllerBase
     {
         private readonly IServiceManager _service;
 
         public ClientsController(IServiceManager service) => _service = service;
 
+        /// <summary>
+        /// Get all clients
+        /// </summary>
+        /// <returns>The clients list</returns>
         [HttpGet]
         [EnableRateLimiting("SpecificPolicy")]
         public async Task<IActionResult> GetClients(
@@ -45,7 +51,14 @@ namespace ClientManager.Infrastructure.Presentation.Controllers
             return Ok(client);
         }
 
-        [HttpPost]
+        /// <summary>
+        /// Create new client
+        /// </summary>
+        /// <returns>A newly created client</returns>
+        [HttpPost(Name = "CreateClient")]
+        [ProducesResponseType(StatusCodes.Status201Created)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
         public async Task<IActionResult> CreateClient(
             [FromBody] ClientForCreationDto client,
             [FromServices] IValidator<ClientForCreationDto> validator,
