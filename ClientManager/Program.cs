@@ -39,6 +39,8 @@ namespace ClientManager
 
             builder.Services.ConfigureVersioning();
 
+            builder.Services.ConfigureRateLimitingOptions();
+
             builder.Services.AddControllers(config =>
             {
                 config.InputFormatters.Insert(0, GetJsonPatchInputFormatter());
@@ -76,6 +78,8 @@ namespace ClientManager
             {
                 ForwardedHeaders = ForwardedHeaders.All
             });
+
+            app.UseRateLimiter();
 
             app.UseCors("CorsPolicy");
 

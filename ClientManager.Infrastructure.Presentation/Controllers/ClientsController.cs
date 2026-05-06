@@ -4,6 +4,7 @@ using ClientManager.Infrastructure.Presentation.Validators;
 using FluentValidation;
 using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Shared.DataTransferObjects.Clients;
 using Shared.RequestFeatures;
 using System.Text.Json;
@@ -19,6 +20,7 @@ namespace ClientManager.Infrastructure.Presentation.Controllers
         public ClientsController(IServiceManager service) => _service = service;
 
         [HttpGet]
+        [EnableRateLimiting("SpecificPolicy")]
         public async Task<IActionResult> GetClients(
             [FromQuery] ClientParameters clientParameters, 
             CancellationToken ct, 
@@ -32,6 +34,7 @@ namespace ClientManager.Infrastructure.Presentation.Controllers
         }
 
         [HttpGet("{id:guid}", Name = "ClientById")]
+        [DisableRateLimiting]
         public async Task<IActionResult> GetClient(
             Guid id, 
             CancellationToken ct, 
