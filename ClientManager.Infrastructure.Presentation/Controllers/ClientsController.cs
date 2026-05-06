@@ -77,7 +77,11 @@ namespace ClientManager.Infrastructure.Presentation.Controllers
         }
 
         [HttpPatch("{id:guid}")]
-        public async Task<IActionResult> PartiallyUpdateClient(Guid id, [FromBody] JsonPatchDocument<ClientForUpdateDto> patchDoc, CancellationToken ct)
+        public async Task<IActionResult> PartiallyUpdateClient(
+            Guid id,
+            [FromBody] JsonPatchDocument<ClientForUpdateDto> patchDoc,
+            [FromServices] IValidator<ClientForUpdateDto> validator,
+            CancellationToken ct)
         {
             if (patchDoc is null)
                 return BadRequest("patchDoc object sent from client is null.");
@@ -86,10 +90,12 @@ namespace ClientManager.Infrastructure.Presentation.Controllers
 
             patchDoc.ApplyTo(result.clientToPatch, ModelState);
 
-            TryValidateModel(result.clientToPatch);
-
             if (!ModelState.IsValid)
                 return UnprocessableEntity(ModelState);
+
+            var valResult = validator.Validate(result.clientToPatch);
+            if (!valResult.IsValid)
+                return UnprocessableEntity(valResult.ToDictionary());
 
             await _service.ClientService.SaveChangesForPatchAsync(result.clientToPatch, result.clientEntity, ct);
 

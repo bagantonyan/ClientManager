@@ -58,7 +58,12 @@ namespace ClientManager.Infrastructure.Presentation.Controllers
         }
 
         [HttpPatch("{id:guid}")]
-        public async Task<IActionResult> PartiallyUpdateFounderForClient(Guid clientId, Guid id, [FromBody] JsonPatchDocument<FounderForUpdateDto> patchDoc, CancellationToken ct)
+        public async Task<IActionResult> PartiallyUpdateFounderForClient(
+            Guid clientId,
+            Guid id,
+            [FromBody] JsonPatchDocument<FounderForUpdateDto> patchDoc,
+            [FromServices] IValidator<FounderForUpdateDto> validator,
+            CancellationToken ct)
         {
             if (patchDoc is null)
                 return BadRequest("patchDoc object sent from client is null.");
@@ -67,10 +72,12 @@ namespace ClientManager.Infrastructure.Presentation.Controllers
 
             patchDoc.ApplyTo(result.founderToPatch, ModelState);
 
-            TryValidateModel(result.founderToPatch);
-
             if (!ModelState.IsValid)
                 return UnprocessableEntity(ModelState);
+
+            var valResult = validator.Validate(result.founderToPatch);
+            if (!valResult.IsValid)
+                return UnprocessableEntity(valResult.ToDictionary());
 
             await _service.FounderService.SaveChangesForPatchAsync(result.founderToPatch, result.founderEntity);
 
