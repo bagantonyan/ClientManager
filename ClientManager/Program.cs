@@ -1,5 +1,7 @@
 using ClientManager.Core.Services;
 using ClientManager.Extensions;
+using ClientManager.Infrastructure.Presentation.Validators.Clients;
+using FluentValidation;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Formatters;
@@ -39,6 +41,8 @@ namespace ClientManager
             {
                 config.InputFormatters.Insert(0, GetJsonPatchInputFormatter());
             }).AddApplicationPart(typeof(ClientManager.Infrastructure.Presentation.AssemblyReference).Assembly);
+
+            builder.Services.AddValidatorsFromAssemblyContaining(typeof(ClientForCreationDtoValidator));
 
             builder.Services.ConfigureSwagger();
 

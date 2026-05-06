@@ -1,4 +1,5 @@
 ﻿using ClientManager.Core.Services.Abstractions;
+using FluentValidation;
 using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
 using Shared.DataTransferObjects.Founders;
@@ -30,10 +31,18 @@ namespace ClientManager.Infrastructure.Presentation.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> CreateFounderForClient(Guid clientId, [FromBody] FounderForCreationDto founder, CancellationToken ct)
+        public async Task<IActionResult> CreateFounderForClient(
+            Guid clientId, 
+            [FromBody] FounderForCreationDto founder,
+            [FromServices] IValidator<FounderForCreationDto> validator,
+            CancellationToken ct)
         {
             if (founder is null)
                 return BadRequest("FounderForCreationDto object is null");
+
+            var valResult = validator.Validate(founder);
+            if (!valResult.IsValid)
+                return UnprocessableEntity(valResult.ToDictionary());
 
             var founderToReturn = await _service.FounderService.CreateFounderForClientAsync(clientId, founder, trackChanges: true, ct);
 

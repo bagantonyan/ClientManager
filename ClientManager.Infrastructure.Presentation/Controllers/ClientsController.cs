@@ -1,5 +1,6 @@
 ﻿using ClientManager.Core.Services.Abstractions;
 using ClientManager.Infrastructure.Presentation.ModelBinders;
+using FluentValidation;
 using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
 using Shared.DataTransferObjects.Clients;
@@ -31,10 +32,17 @@ namespace ClientManager.Infrastructure.Presentation.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> CreateClient([FromBody] ClientForCreationDto client, CancellationToken ct)
+        public async Task<IActionResult> CreateClient(
+            [FromBody] ClientForCreationDto client,
+            [FromServices] IValidator<ClientForCreationDto> validator,
+            CancellationToken ct)
         {
             if (client is null)
                 return BadRequest("ClientForCreationDto object is null");
+
+            var valResult = validator.Validate(client);
+            if (!valResult.IsValid)
+                return UnprocessableEntity(valResult.ToDictionary());
 
             var createdClient = await _service.ClientService.CreateClientAsync(client, ct);
 
