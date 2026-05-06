@@ -24,18 +24,18 @@ namespace ClientManager.Core.Services
             _mapper = mapper;
         }
 
-        public IEnumerable<ClientDto> GetAllClients(bool trackChanges, bool includeFounders)
+        public async Task<IEnumerable<ClientDto>> GetAllClientsAsync(bool trackChanges, bool includeFounders)
         {
-            var clients = _repository.Client.GetAllClients(trackChanges, includeFounders);
+            var clients = await _repository.Client.GetAllClientsAsync(trackChanges, includeFounders);
 
             var clientsDto = _mapper.Map<IEnumerable<ClientDto>>(clients);
 
             return clientsDto;
         }
 
-        public ClientDto GetClient(Guid id, bool trackChanges, bool includeFounders)
+        public async Task<ClientDto> GetClientAsync(Guid id, bool trackChanges, bool includeFounders)
         {
-            var client = _repository.Client.GetClient(id, trackChanges, includeFounders);
+            var client = await _repository.Client.GetClientAsync(id, trackChanges, includeFounders);
 
             if (client is null)
                 throw new ClientNotFoundException(id);
@@ -45,7 +45,7 @@ namespace ClientManager.Core.Services
             return clientDto;
         }
 
-        public ClientDto CreateClient(ClientForCreationDto client)
+        public async Task<ClientDto> CreateClientAsync(ClientForCreationDto client)
         {
             ValidateFoundersByClientType(client);
 
@@ -53,19 +53,19 @@ namespace ClientManager.Core.Services
 
             _repository.Client.CreateClient(clientEntity);
 
-            _repository.Save();
+            await _repository.SaveAsync();
 
             var clientToReturn = _mapper.Map<ClientDto>(clientEntity);
 
             return clientToReturn;
         }
 
-        public IEnumerable<ClientDto> GetByIds(IEnumerable<Guid> ids, bool trackChanges, bool includeFounders)
+        public async Task<IEnumerable<ClientDto>> GetByIdsAsync(IEnumerable<Guid> ids, bool trackChanges, bool includeFounders)
         {
             if (ids is null)
                 throw new IdParametersBadRequestException();
 
-            var clientEntities = _repository.Client.GetByIds(ids, trackChanges, includeFounders);
+            var clientEntities = await _repository.Client.GetByIdsAsync(ids, trackChanges, includeFounders);
 
             if (ids.Count() != clientEntities.Count())
                 throw new CollectionByIdsBadRequestException();
@@ -75,7 +75,7 @@ namespace ClientManager.Core.Services
             return clientsToReturn;
         }
 
-        public (IEnumerable<ClientDto> clients, string ids) CreateClientCollection(IEnumerable<ClientForCreationDto> clientCollection)
+        public async Task<(IEnumerable<ClientDto> clients, string ids)> CreateClientCollectionAsync(IEnumerable<ClientForCreationDto> clientCollection)
         {
             if (clientCollection is null)
                 throw new ClientCollectionBadRequest();
@@ -90,7 +90,7 @@ namespace ClientManager.Core.Services
                 _repository.Client.CreateClient(client);
             }
 
-            _repository.Save();
+            await _repository.SaveAsync();
 
             var clientCollectionToReturn = _mapper.Map<IEnumerable<ClientDto>>(clientEntities);
 
@@ -99,7 +99,7 @@ namespace ClientManager.Core.Services
             return (clients: clientCollectionToReturn, ids: ids);
         }
 
-        private static void ValidateFoundersByClientType(ClientForCreationDto client)
+        private void ValidateFoundersByClientType(ClientForCreationDto client)
         {
             var hasFounders = client.Founders is not null && client.Founders.Any();
 
@@ -110,9 +110,9 @@ namespace ClientManager.Core.Services
                 throw new FounderNotAllowedForClientException();
         }
 
-        public void DeleteClient(Guid clientId)
+        public async Task DeleteClientAsync(Guid clientId)
         {
-            var client = _repository.Client.GetClientForDeletion(clientId);
+            var client = await _repository.Client.GetClientForDeletionAsync(clientId);
 
             if (client is null)
                 throw new ClientNotFoundException(clientId);
@@ -135,7 +135,7 @@ namespace ClientManager.Core.Services
 
             _repository.Client.DeleteClient(client);
 
-            _repository.Save();
+            await _repository.SaveAsync();
         }
     }
 }

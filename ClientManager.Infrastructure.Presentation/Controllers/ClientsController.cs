@@ -14,54 +14,54 @@ namespace ClientManager.Infrastructure.Presentation.Controllers
         public ClientsController(IServiceManager service) => _service = service;
 
         [HttpGet]
-        public IActionResult GetClients([FromQuery] bool includeFounders = true)
+        public async Task<IActionResult> GetClients([FromQuery] bool includeFounders = true)
         {
-            var clients = _service.ClientService.GetAllClients(trackChanges: false, includeFounders);
+            var clients = await _service.ClientService.GetAllClientsAsync(trackChanges: false, includeFounders);
 
             return Ok(clients);
         }
 
         [HttpGet("{id:guid}", Name = "ClientById")]
-        public IActionResult GetClient(Guid id, [FromQuery] bool includeFounders = true)
+        public async Task<IActionResult> GetClient(Guid id, [FromQuery] bool includeFounders = true)
         {
-            var client = _service.ClientService.GetClient(id, trackChanges: false, includeFounders);
+            var client = await _service.ClientService.GetClientAsync(id, trackChanges: false, includeFounders);
 
             return Ok(client);
         }
 
         [HttpPost]
-        public IActionResult CreateClient([FromBody] ClientForCreationDto client)
+        public async Task<IActionResult> CreateClient([FromBody] ClientForCreationDto client)
         {
             if (client is null)
                 return BadRequest("ClientForCreationDto object is null");
 
-            var createdClient = _service.ClientService.CreateClient(client);
+            var createdClient = await _service.ClientService.CreateClientAsync(client);
 
             return CreatedAtRoute("ClientById", new { id = createdClient.Id }, createdClient);
         }
 
         [HttpGet("collection/({ids})", Name = "ClientCollection")]
-        public IActionResult GetClientCollection(
+        public async Task<IActionResult> GetClientCollection(
             [ModelBinder(BinderType = typeof(ArrayModelBinder))] IEnumerable<Guid> ids,
             [FromQuery] bool includeFounders = true)
         {
-            var clients = _service.ClientService.GetByIds(ids, trackChanges: false, includeFounders);
+            var clients = await _service.ClientService.GetByIdsAsync(ids, trackChanges: false, includeFounders);
 
             return Ok(clients);
         }
 
         [HttpPost("collection")]
-        public IActionResult CreateClientCollection([FromBody] IEnumerable<ClientForCreationDto> clientCollection)
+        public async Task<IActionResult> CreateClientCollection([FromBody] IEnumerable<ClientForCreationDto> clientCollection)
         {
-            var result = _service.ClientService.CreateClientCollection(clientCollection);
+            var result = await _service.ClientService.CreateClientCollectionAsync(clientCollection);
 
             return CreatedAtRoute("ClientCollection", new { result.ids }, result.clients);
         }
 
         [HttpDelete("{id:guid}")]
-        public IActionResult DeleteClient(Guid id)
+        public async Task<IActionResult> DeleteClient(Guid id)
         {
-            _service.ClientService.DeleteClient(id);
+            await _service.ClientService.DeleteClientAsync(id);
 
             return NoContent();
         }

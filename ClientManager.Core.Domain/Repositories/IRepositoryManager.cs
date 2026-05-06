@@ -4,6 +4,6 @@
     {
         IClientRepository Client { get; }
         IFounderRepository Founder { get; }
-        void Save();
+        Task SaveAsync();
     }
 }

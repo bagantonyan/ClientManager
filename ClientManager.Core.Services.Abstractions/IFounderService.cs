@@ -4,9 +4,9 @@ namespace ClientManager.Core.Services.Abstractions
 {
     public interface IFounderService
     {
-        IEnumerable<FounderDto> GetFounders(Guid clientId, bool trackChanges);
-        FounderDto GetFounder(Guid clientId, Guid id, bool trackChanges);
-        FounderDto CreateFounderForClient(Guid clientId, FounderForCreationDto founderForCreation, bool trackChanges);
-        void DeleteFounderForClient(Guid clientId, Guid id, bool trackChanges);
+        Task<IEnumerable<FounderDto>> GetFoundersAsync(Guid clientId, bool trackChanges);
+        Task<FounderDto> GetFounderAsync(Guid clientId, Guid id, bool trackChanges);
+        Task<FounderDto> CreateFounderForClientAsync(Guid clientId, FounderForCreationDto founderForCreation, bool trackChanges);
+        Task DeleteFounderForClientAsync(Guid clientId, Guid id, bool trackChanges);
     }
 }

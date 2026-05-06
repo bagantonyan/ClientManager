@@ -4,11 +4,11 @@ namespace ClientManager.Core.Services.Abstractions
 {
     public interface IClientService
     {
-        IEnumerable<ClientDto> GetAllClients(bool trackChanges, bool includeFounders);
-        ClientDto GetClient(Guid clientId, bool trackChanges, bool includeFounders);
-        ClientDto CreateClient(ClientForCreationDto client);
-        IEnumerable<ClientDto> GetByIds(IEnumerable<Guid> ids, bool trackChanges, bool includeFounders);
-        (IEnumerable<ClientDto> clients, string ids) CreateClientCollection(IEnumerable<ClientForCreationDto> clientCollection);
-        void DeleteClient(Guid clientId);
+        Task<IEnumerable<ClientDto>> GetAllClientsAsync(bool trackChanges, bool includeFounders);
+        Task<ClientDto> GetClientAsync(Guid clientId, bool trackChanges, bool includeFounders);
+        Task<ClientDto> CreateClientAsync(ClientForCreationDto client);
+        Task<IEnumerable<ClientDto>> GetByIdsAsync(IEnumerable<Guid> ids, bool trackChanges, bool includeFounders);
+        Task<(IEnumerable<ClientDto> clients, string ids)> CreateClientCollectionAsync(IEnumerable<ClientForCreationDto> clientCollection);
+        Task DeleteClientAsync(Guid clientId);
     }
 }

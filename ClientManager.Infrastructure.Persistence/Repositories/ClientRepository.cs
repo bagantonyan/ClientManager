@@ -12,7 +12,7 @@ namespace ClientManager.Infrastructure.Persistence.Repositories
         {
         }
 
-        public IEnumerable<Client> GetAllClients(bool trackChanges, bool includeFounders)
+        public async Task<IEnumerable<Client>> GetAllClientsAsync(bool trackChanges, bool includeFounders)
         {
             var query = FindAll(trackChanges);
 
@@ -21,12 +21,12 @@ namespace ClientManager.Infrastructure.Persistence.Repositories
                     .Include(c => c.ClientFounders!)
                         .ThenInclude(cf => cf.Founder);
 
-            return query
+            return await query
                 .OrderBy(c => c.Name)
-                .ToList();
+                .ToListAsync();
         }
 
-        public Client GetClient(Guid clientId, bool trackChanges, bool includeFounders)
+        public async Task<Client> GetClientAsync(Guid clientId, bool trackChanges, bool includeFounders)
         {
             var query = FindByCondition(c => c.Id.Equals(clientId), trackChanges);
 
@@ -35,12 +35,12 @@ namespace ClientManager.Infrastructure.Persistence.Repositories
                     .Include(c => c.ClientFounders!)
                         .ThenInclude(cf => cf.Founder);
 
-            return query.SingleOrDefault()!;
+            return await query.SingleOrDefaultAsync()!;
         }
 
         public void CreateClient(Client client) => Create(client);
 
-        public IEnumerable<Client> GetByIds(IEnumerable<Guid> ids, bool trackChanges, bool includeFounders)
+        public async Task<IEnumerable<Client>> GetByIdsAsync(IEnumerable<Guid> ids, bool trackChanges, bool includeFounders)
         {
             var query = FindByCondition(x => ids.Contains(x.Id), trackChanges);
 
@@ -49,15 +49,15 @@ namespace ClientManager.Infrastructure.Persistence.Repositories
                     .Include(c => c.ClientFounders!)
                         .ThenInclude(cf => cf.Founder);
 
-            return query.ToList();
+            return await query.ToListAsync();
         }
 
-        public Client GetClientForDeletion(Guid clientId) =>
-            FindByCondition(c => c.Id.Equals(clientId), trackChanges: true)
+        public async Task<Client> GetClientForDeletionAsync(Guid clientId) =>
+            await FindByCondition(c => c.Id.Equals(clientId), trackChanges: true)
                 .Include(c => c.ClientFounders!)
                     .ThenInclude(cf => cf.Founder)
                         .ThenInclude(f => f!.ClientFounders)
-                .SingleOrDefault()!;
+                .SingleOrDefaultAsync()!;
 
         public void DeleteClient(Client client) => Delete(client);
     }

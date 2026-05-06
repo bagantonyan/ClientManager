@@ -13,36 +13,36 @@ namespace ClientManager.Infrastructure.Presentation.Controllers
         public FoundersController(IServiceManager service) => _service = service;
 
         [HttpGet]
-        public IActionResult GetFoundersForClient(Guid clientId)
+        public async Task<IActionResult> GetFoundersForClient(Guid clientId)
         {
-            var founders = _service.FounderService.GetFounders(clientId, trackChanges: false);
+            var founders = await _service.FounderService.GetFoundersAsync(clientId, trackChanges: false);
 
             return Ok(founders);
         }
 
         [HttpGet("{id:guid}", Name = "GetFounderForClient")]
-        public IActionResult GetFounderForClient(Guid clientId, Guid id)
+        public async Task<IActionResult> GetFounderForClient(Guid clientId, Guid id)
         {
-            var founder = _service.FounderService.GetFounder(clientId, id, trackChanges: false);
+            var founder = await _service.FounderService.GetFounderAsync(clientId, id, trackChanges: false);
 
             return Ok(founder);
         }
 
         [HttpPost]
-        public IActionResult CreateFounderForClient(Guid clientId, [FromBody] FounderForCreationDto founder)
+        public async Task<IActionResult> CreateFounderForClient(Guid clientId, [FromBody] FounderForCreationDto founder)
         {
             if (founder is null)
                 return BadRequest("FounderForCreationDto object is null");
 
-            var founderToReturn = _service.FounderService.CreateFounderForClient(clientId, founder, trackChanges: true);
+            var founderToReturn = await _service.FounderService.CreateFounderForClientAsync(clientId, founder, trackChanges: true);
 
             return CreatedAtRoute("GetFounderForClient", new { clientId, id = founderToReturn.Id }, founderToReturn);
         }
 
         [HttpDelete("{id:guid}")]
-        public IActionResult DeleteFounderForClient(Guid clientId, Guid id)
+        public async Task<IActionResult> DeleteFounderForClient(Guid clientId, Guid id)
         {
-            _service.FounderService.DeleteFounderForClient(clientId, id, trackChanges: true);
+            await _service.FounderService.DeleteFounderForClientAsync(clientId, id, trackChanges: true);
 
             return NoContent();
         }

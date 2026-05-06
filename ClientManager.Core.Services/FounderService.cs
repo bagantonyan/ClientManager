@@ -24,28 +24,28 @@ namespace ClientManager.Core.Services
             _mapper = mapper;
         }
 
-        public IEnumerable<FounderDto> GetFounders(Guid clientId, bool trackChanges)
+        public async Task<IEnumerable<FounderDto>> GetFoundersAsync(Guid clientId, bool trackChanges)
         {
-            var client = _repository.Client.GetClient(clientId, trackChanges, includeFounders: false);
+            var client = await _repository.Client.GetClientAsync(clientId, trackChanges, includeFounders: false);
 
             if (client is null)
                 throw new ClientNotFoundException(clientId);
 
-            var foundersFromDb = _repository.Founder.GetFounders(clientId, trackChanges);
+            var foundersFromDb = await _repository.Founder.GetFoundersAsync(clientId, trackChanges);
 
             var foundersDto = _mapper.Map<IEnumerable<FounderDto>>(foundersFromDb);
 
             return foundersDto;
         }
 
-        public FounderDto GetFounder(Guid clientId, Guid id, bool trackChanges)
+        public async Task<FounderDto> GetFounderAsync(Guid clientId, Guid id, bool trackChanges)
         {
-            var client = _repository.Client.GetClient(clientId, trackChanges, false);
+            var client = await _repository.Client.GetClientAsync(clientId, trackChanges, false);
 
             if (client is null)
                 throw new ClientNotFoundException(clientId);
 
-            var founderDb = _repository.Founder.GetFounder(clientId, id, trackChanges);
+            var founderDb = await _repository.Founder.GetFounderAsync(clientId, id, trackChanges);
 
             if (founderDb is null)
                 throw new FounderNotFoundException(id);
@@ -55,9 +55,9 @@ namespace ClientManager.Core.Services
             return founder;
         }
 
-        public FounderDto CreateFounderForClient(Guid clientId, FounderForCreationDto founderForCreation, bool trackChanges)
+        public async Task<FounderDto> CreateFounderForClientAsync(Guid clientId, FounderForCreationDto founderForCreation, bool trackChanges)
         {
-            var client = _repository.Client.GetClient(clientId, trackChanges, includeFounders: false);
+            var client = await _repository.Client.GetClientAsync(clientId, trackChanges, includeFounders: false);
 
             if (client is null)
                 throw new ClientNotFoundException(clientId);
@@ -69,21 +69,21 @@ namespace ClientManager.Core.Services
 
             _repository.Founder.CreateFounderForClient(client, founderEntity);
 
-            _repository.Save();
+            await _repository.SaveAsync();
 
             var founderToReturn = _mapper.Map<FounderDto>(founderEntity);
 
             return founderToReturn;
         }
 
-        public void DeleteFounderForClient(Guid clientId, Guid id, bool trackChanges)
+        public async Task DeleteFounderForClientAsync(Guid clientId, Guid id, bool trackChanges)
         {
-            var client = _repository.Client.GetClient(clientId, trackChanges: true, includeFounders: true);
+            var client = await _repository.Client.GetClientAsync(clientId, trackChanges: true, includeFounders: true);
 
             if (client is null)
                 throw new ClientNotFoundException(clientId);
 
-            var founder = _repository.Founder.GetFounderWithLinks(clientId, id, trackChanges: true);
+            var founder = await _repository.Founder.GetFounderWithLinksAsync(clientId, id, trackChanges: true);
 
             if (founder is null)
                 throw new FounderNotFoundException(id);
@@ -98,7 +98,7 @@ namespace ClientManager.Core.Services
             if (founder.ClientFounders!.Count == 0)
                 _repository.Founder.DeleteFounder(founder);
 
-            _repository.Save();
+            await _repository.SaveAsync();
         }
     }
 }
