@@ -26,10 +26,7 @@ namespace ClientManager.Core.Services
 
         public async Task<IEnumerable<FounderDto>> GetFoundersAsync(Guid clientId, bool trackChanges, CancellationToken ct = default)
         {
-            var client = await _repository.Client.GetClientAsync(clientId, trackChanges, includeFounders: false, ct);
-
-            if (client is null)
-                throw new ClientNotFoundException(clientId);
+            var client = await GetAndCheckIfClientExistsAsync(clientId, trackChanges, includeFounders: false, ct);
 
             var foundersFromDb = await _repository.Founder.GetFoundersAsync(clientId, trackChanges, ct);
 
@@ -40,15 +37,9 @@ namespace ClientManager.Core.Services
 
         public async Task<FounderDto> GetFounderAsync(Guid clientId, Guid id, bool trackChanges, CancellationToken ct = default)
         {
-            var client = await _repository.Client.GetClientAsync(clientId, trackChanges, includeFounders: false, ct);
+            await GetAndCheckIfClientExistsAsync(clientId, trackChanges, includeFounders: false, ct);
 
-            if (client is null)
-                throw new ClientNotFoundException(clientId);
-
-            var founderDb = await _repository.Founder.GetFounderAsync(clientId, id, trackChanges, ct);
-
-            if (founderDb is null)
-                throw new FounderNotFoundException(id);
+            var founderDb = await GetFounderForClientAndCheckIfItExistsAsync(clientId, id, trackChanges, ct);
 
             var founder = _mapper.Map<FounderDto>(founderDb);
 
@@ -57,10 +48,7 @@ namespace ClientManager.Core.Services
 
         public async Task<FounderDto> CreateFounderForClientAsync(Guid clientId, FounderForCreationDto founderForCreation, bool trackChanges, CancellationToken ct = default)
         {
-            var client = await _repository.Client.GetClientAsync(clientId, trackChanges, includeFounders: false, ct);
-
-            if (client is null)
-                throw new ClientNotFoundException(clientId);
+            var client = await GetAndCheckIfClientExistsAsync(clientId, trackChanges, includeFounders: false, ct);
 
             if (client.ClientType != ClientType.Legal_Entity)
                 throw new FounderNotAllowedForClientException(clientId);
@@ -78,10 +66,7 @@ namespace ClientManager.Core.Services
 
         public async Task DeleteFounderForClientAsync(Guid clientId, Guid id, bool trackChanges, CancellationToken ct = default)
         {
-            var client = await _repository.Client.GetClientAsync(clientId, trackChanges: true, includeFounders: true, ct);
-
-            if (client is null)
-                throw new ClientNotFoundException(clientId);
+            var client = await GetAndCheckIfClientExistsAsync(clientId, trackChanges, includeFounders: true, ct);
 
             var founder = await _repository.Founder.GetFounderWithLinksAsync(clientId, id, trackChanges: true, ct);
 
@@ -103,15 +88,9 @@ namespace ClientManager.Core.Services
 
         public async Task<(FounderForUpdateDto founderToPatch, Founder founderEntity)> GetFounderForPatchAsync(Guid clientId, Guid id, bool clientTrackChanges, bool founderTrackChanges, CancellationToken ct = default)
         {
-            var client = await _repository.Client.GetClientAsync(clientId, clientTrackChanges, includeFounders: false, ct);
+            await GetAndCheckIfClientExistsAsync(clientId, clientTrackChanges, includeFounders: false, ct);
 
-            if (client is null)
-                throw new ClientNotFoundException(clientId);
-
-            var founderEntity = await _repository.Founder.GetFounderAsync(clientId, id, founderTrackChanges, ct);
-
-            if (founderEntity is null)
-                throw new FounderNotFoundException(id);
+            var founderEntity = await GetFounderForClientAndCheckIfItExistsAsync(clientId, id, founderTrackChanges, ct);
 
             var founderToPatch = _mapper.Map<FounderForUpdateDto>(founderEntity);
 
@@ -123,6 +102,26 @@ namespace ClientManager.Core.Services
             _mapper.Map(founderToPatch, founderEntity);
 
             await _repository.SaveAsync(ct);
+        }
+
+        private async Task<Client> GetAndCheckIfClientExistsAsync(Guid clientId, bool trackChanges, bool includeFounders, CancellationToken ct)
+        {
+            var client = await _repository.Client.GetClientAsync(clientId, trackChanges, includeFounders, ct);
+
+            if (client is null)
+                throw new ClientNotFoundException(clientId);
+
+            return client;
+        }
+
+        private async Task<Founder> GetFounderForClientAndCheckIfItExistsAsync(Guid clientId, Guid id, bool trackChanges, CancellationToken ct)
+        {
+            var founder = await _repository.Founder.GetFounderAsync(clientId, id, trackChanges, ct);
+
+            if (founder is null)
+                throw new FounderNotFoundException(id);
+
+            return founder;
         }
     }
 }
