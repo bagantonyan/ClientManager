@@ -4,6 +4,6 @@
     {
         IClientRepository Client { get; }
         IFounderRepository Founder { get; }
-        Task SaveAsync();
+        Task SaveAsync(CancellationToken ct = default);
     }
 }

@@ -1,7 +1,6 @@
 ﻿using ClientManager.Core.Domain.Entities;
 using ClientManager.Core.Domain.Repositories;
 using Microsoft.EntityFrameworkCore;
-using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
 
 namespace ClientManager.Infrastructure.Persistence.Repositories
 {
@@ -12,7 +11,7 @@ namespace ClientManager.Infrastructure.Persistence.Repositories
         {
         }
 
-        public async Task<IEnumerable<Client>> GetAllClientsAsync(bool trackChanges, bool includeFounders)
+        public async Task<IEnumerable<Client>> GetAllClientsAsync(bool trackChanges, bool includeFounders, CancellationToken ct = default)
         {
             var query = FindAll(trackChanges);
 
@@ -23,10 +22,10 @@ namespace ClientManager.Infrastructure.Persistence.Repositories
 
             return await query
                 .OrderBy(c => c.Name)
-                .ToListAsync();
+                .ToListAsync(ct);
         }
 
-        public async Task<Client> GetClientAsync(Guid clientId, bool trackChanges, bool includeFounders)
+        public async Task<Client> GetClientAsync(Guid clientId, bool trackChanges, bool includeFounders, CancellationToken ct = default)
         {
             var query = FindByCondition(c => c.Id.Equals(clientId), trackChanges);
 
@@ -35,12 +34,12 @@ namespace ClientManager.Infrastructure.Persistence.Repositories
                     .Include(c => c.ClientFounders!)
                         .ThenInclude(cf => cf.Founder);
 
-            return await query.SingleOrDefaultAsync()!;
+            return await query.SingleOrDefaultAsync(ct)!;
         }
 
         public void CreateClient(Client client) => Create(client);
 
-        public async Task<IEnumerable<Client>> GetByIdsAsync(IEnumerable<Guid> ids, bool trackChanges, bool includeFounders)
+        public async Task<IEnumerable<Client>> GetByIdsAsync(IEnumerable<Guid> ids, bool trackChanges, bool includeFounders, CancellationToken ct = default)
         {
             var query = FindByCondition(x => ids.Contains(x.Id), trackChanges);
 
@@ -49,15 +48,15 @@ namespace ClientManager.Infrastructure.Persistence.Repositories
                     .Include(c => c.ClientFounders!)
                         .ThenInclude(cf => cf.Founder);
 
-            return await query.ToListAsync();
+            return await query.ToListAsync(ct);
         }
 
-        public async Task<Client> GetClientForDeletionAsync(Guid clientId) =>
+        public async Task<Client> GetClientForDeletionAsync(Guid clientId, CancellationToken ct = default) =>
             await FindByCondition(c => c.Id.Equals(clientId), trackChanges: true)
                 .Include(c => c.ClientFounders!)
                     .ThenInclude(cf => cf.Founder)
                         .ThenInclude(f => f!.ClientFounders)
-                .SingleOrDefaultAsync()!;
+                .SingleOrDefaultAsync(ct)!;
 
         public void DeleteClient(Client client) => Delete(client);
     }

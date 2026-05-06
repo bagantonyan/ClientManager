@@ -16,6 +16,6 @@ namespace ClientManager.Infrastructure.Persistence
         }
         public IClientRepository Client => _clientRepository.Value;
         public IFounderRepository Founder => _founderRepository.Value;
-        public Task SaveAsync() => _repositoryContext.SaveChangesAsync();
+        public Task SaveAsync(CancellationToken ct = default) => _repositoryContext.SaveChangesAsync(ct);
     }
 }

@@ -11,25 +11,25 @@ namespace ClientManager.Infrastructure.Persistence.Repositories
         {
         }
 
-        public async Task<IEnumerable<Founder>> GetFoundersAsync(Guid clientId, bool trackChanges) =>
+        public async Task<IEnumerable<Founder>> GetFoundersAsync(Guid clientId, bool trackChanges, CancellationToken ct = default) =>
             await FindByCondition(f => f.ClientFounders!.Any(cf => cf.ClientId.Equals(clientId)), trackChanges)
                 .OrderBy(f => f.FullName)
-                .ToListAsync();
+                .ToListAsync(ct);
 
-        public async Task<Founder> GetFounderAsync(Guid clientId, Guid id, bool trackChanges) =>
+        public async Task<Founder> GetFounderAsync(Guid clientId, Guid id, bool trackChanges, CancellationToken ct = default) =>
             await FindByCondition(
                     f => f.Id.Equals(id)
                       && f.ClientFounders!.Any(cf => cf.ClientId.Equals(clientId)),
                     trackChanges)
-                .SingleOrDefaultAsync()!;
+                .SingleOrDefaultAsync(ct)!;
 
-        public async Task<Founder> GetFounderWithLinksAsync(Guid clientId, Guid id, bool trackChanges) =>
+        public async Task<Founder> GetFounderWithLinksAsync(Guid clientId, Guid id, bool trackChanges, CancellationToken ct = default) =>
             await FindByCondition(
                     f => f.Id.Equals(id)
                       && f.ClientFounders!.Any(cf => cf.ClientId.Equals(clientId)),
                     trackChanges)
                 .Include(f => f.ClientFounders)
-                .SingleOrDefaultAsync()!;
+                .SingleOrDefaultAsync(ct)!;
 
         public void CreateFounderForClient(Client client, Founder founder)
         {
