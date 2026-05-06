@@ -1,5 +1,6 @@
 ﻿using ClientManager.Core.Domain.Entities;
 using ClientManager.Core.Domain.Repositories;
+using ClientManager.Infrastructure.Persistence.Extensions;
 using Microsoft.EntityFrameworkCore;
 using Shared.RequestFeatures;
 using System.ComponentModel.Design;
@@ -23,6 +24,7 @@ namespace ClientManager.Infrastructure.Persistence.Repositories
                         .ThenInclude(cf => cf.Founder);
 
             var clients = await query
+                .Search(clientParameters.SearchTerm)
                 .OrderBy(c => c.Name)
                 .Skip((clientParameters.PageNumber - 1) * clientParameters.PageSize)
                 .Take(clientParameters.PageSize)
