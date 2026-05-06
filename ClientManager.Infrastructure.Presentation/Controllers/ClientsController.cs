@@ -1,5 +1,6 @@
 ﻿using ClientManager.Core.Services.Abstractions;
 using ClientManager.Infrastructure.Presentation.ModelBinders;
+using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
 using Shared.DataTransferObjects.Clients;
 
@@ -63,6 +64,26 @@ namespace ClientManager.Infrastructure.Presentation.Controllers
         public async Task<IActionResult> DeleteClient(Guid id, CancellationToken ct)
         {
             await _service.ClientService.DeleteClientAsync(id, ct);
+
+            return NoContent();
+        }
+
+        [HttpPatch("{id:guid}")]
+        public async Task<IActionResult> PartiallyUpdateClient(Guid id, [FromBody] JsonPatchDocument<ClientForUpdateDto> patchDoc, CancellationToken ct)
+        {
+            if (patchDoc is null)
+                return BadRequest("patchDoc object sent from client is null.");
+
+            var result = await _service.ClientService.GetClientForPatchAsync(id, trackChanges: true, ct);
+
+            patchDoc.ApplyTo(result.clientToPatch, ModelState);
+
+            TryValidateModel(result.clientToPatch);
+
+            if (!ModelState.IsValid)
+                return UnprocessableEntity(ModelState);
+
+            await _service.ClientService.SaveChangesForPatchAsync(result.clientToPatch, result.clientEntity, ct);
 
             return NoContent();
         }

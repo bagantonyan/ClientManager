@@ -26,7 +26,7 @@ namespace ClientManager.Core.Services
 
             CreateMap<FounderForUpdateDto, Founder>().ReverseMap();
 
-            CreateMap<ClientForUpdateDto, Client>();
+            CreateMap<ClientForUpdateDto, Client>().ReverseMap();
         }
     }
 }

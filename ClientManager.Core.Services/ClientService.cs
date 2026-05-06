@@ -127,6 +127,25 @@ namespace ClientManager.Core.Services
             await _repository.SaveAsync(ct);
         }
 
+        public async Task<(ClientForUpdateDto clientToPatch, Client clientEntity)> GetClientForPatchAsync(Guid clientId, bool trackChanges, CancellationToken ct = default)
+        {
+            var clientEntity = await _repository.Client.GetClientAsync(clientId, trackChanges, includeFounders: false, ct);
+
+            if (clientEntity is null)
+                throw new ClientNotFoundException(clientId);
+
+            var clientToPatch = _mapper.Map<ClientForUpdateDto>(clientEntity);
+
+            return (clientToPatch, clientEntity);
+        }
+
+        public async Task SaveChangesForPatchAsync(ClientForUpdateDto clientToPatch, Client clientEntity, CancellationToken ct = default)
+        {
+            _mapper.Map(clientToPatch, clientEntity);
+
+            await _repository.SaveAsync(ct);
+        }
+
         private void ValidateFoundersByClientType(ClientForCreationDto client)
         {
             var hasFounders = client.Founders is not null && client.Founders.Any();

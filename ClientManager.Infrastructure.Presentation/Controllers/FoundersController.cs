@@ -56,7 +56,12 @@ namespace ClientManager.Infrastructure.Presentation.Controllers
 
             var result = await _service.FounderService.GetFounderForPatchAsync(clientId, id, clientTrackChanges: false, founderTrackChanges: true, ct);
 
-            patchDoc.ApplyTo(result.founderToPatch);
+            patchDoc.ApplyTo(result.founderToPatch, ModelState);
+
+            TryValidateModel(result.founderToPatch);
+
+            if (!ModelState.IsValid)
+                return UnprocessableEntity(ModelState);
 
             await _service.FounderService.SaveChangesForPatchAsync(result.founderToPatch, result.founderEntity);
 
