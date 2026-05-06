@@ -5,6 +5,7 @@ using ClientManager.Core.Domain.Repositories;
 using ClientManager.Core.Services.Abstractions;
 using LoggingService;
 using Shared.DataTransferObjects.Clients;
+using Shared.DataTransferObjects.Founders;
 using Shared.Enums;
 using Shared.RequestFeatures;
 
@@ -47,40 +48,8 @@ namespace ClientManager.Core.Services
         {
             ValidateFoundersByClientType(client);
 
-            var existing = await _repository.Client.GetByInnIncludingDeletedAsync(client.INN!, trackChanges: true, ct);
-
-            Client clientEntity;
-            if (existing is not null)
-            {
-                if (existing.DeletedDate is null)
-                    throw new ClientWithSameInnExistsException(client.INN!);
-
-                existing.DeletedDate = null;
-                existing.Name = client.Name;
-                existing.ClientType = client.ClientType;
-                clientEntity = existing;
-            }
-            else
-            {
-                clientEntity = new Client
-                {
-                    INN = client.INN,
-                    Name = client.Name,
-                    ClientType = client.ClientType
-                };
-                _repository.Client.CreateClient(clientEntity);
-            }
-
-            if (client.Founders is not null && client.Founders.Any())
-            {
-                var resolved = new List<ClientFounder>();
-                foreach (var founderDto in client.Founders)
-                {
-                    var founder = await ResolveFounderAsync(founderDto, ct);
-                    resolved.Add(new ClientFounder { Founder = founder });
-                }
-                clientEntity.ClientFounders = resolved;
-            }
+            var founderCache = new Dictionary<string, Founder>();
+            var clientEntity = await ResolveOrCreateClientAsync(client, founderCache, ct);
 
             await _repository.SaveAsync(ct);
 
@@ -89,9 +58,60 @@ namespace ClientManager.Core.Services
             return clientToReturn;
         }
 
-        private async Task<Founder> ResolveFounderAsync(Shared.DataTransferObjects.Founders.FounderForCreationDto dto, CancellationToken ct)
+        private async Task<Client> ResolveOrCreateClientAsync(
+            ClientForCreationDto dto,
+            Dictionary<string, Founder> founderCache,
+            CancellationToken ct)
         {
+            var existing = await _repository.Client.GetByInnIncludingDeletedAsync(dto.INN!, trackChanges: true, ct);
+
+            Client clientEntity;
+            if (existing is not null)
+            {
+                if (existing.DeletedDate is null)
+                    throw new ClientWithSameInnExistsException(dto.INN!);
+
+                existing.DeletedDate = null;
+                existing.Name = dto.Name;
+                existing.ClientType = dto.ClientType;
+                clientEntity = existing;
+            }
+            else
+            {
+                clientEntity = new Client
+                {
+                    INN = dto.INN,
+                    Name = dto.Name,
+                    ClientType = dto.ClientType
+                };
+                _repository.Client.CreateClient(clientEntity);
+            }
+
+            if (dto.Founders is not null && dto.Founders.Any())
+            {
+                var resolved = new List<ClientFounder>();
+                foreach (var founderDto in dto.Founders)
+                {
+                    var founder = await ResolveFounderAsync(founderDto, founderCache, ct);
+                    resolved.Add(new ClientFounder { Founder = founder });
+                }
+                clientEntity.ClientFounders = resolved;
+            }
+
+            return clientEntity;
+        }
+
+        private async Task<Founder> ResolveFounderAsync(
+            FounderForCreationDto dto,
+            Dictionary<string, Founder> cache,
+            CancellationToken ct)
+        {
+            if (cache.TryGetValue(dto.INN!, out var cached))
+                return cached;
+
             var existing = await _repository.Founder.GetByInnIncludingDeletedAsync(dto.INN!, trackChanges: true, ct);
+
+            Founder result;
             if (existing is not null)
             {
                 if (existing.DeletedDate is not null)
@@ -99,9 +119,15 @@ namespace ClientManager.Core.Services
                     existing.DeletedDate = null;
                     existing.FullName = dto.FullName;
                 }
-                return existing;
+                result = existing;
             }
-            return _mapper.Map<Founder>(dto);
+            else
+            {
+                result = _mapper.Map<Founder>(dto);
+            }
+
+            cache[dto.INN!] = result;
+            return result;
         }
 
         public async Task<IEnumerable<ClientDto>> GetByIdsAsync(IEnumerable<Guid> ids, bool trackChanges, bool includeFounders, CancellationToken ct = default)
@@ -124,14 +150,18 @@ namespace ClientManager.Core.Services
             if (clientCollection is null)
                 throw new ClientCollectionBadRequest();
 
-            foreach (var client in clientCollection)
-                ValidateFoundersByClientType(client);
+            var dtos = clientCollection.ToList();
 
-            var clientEntities = _mapper.Map<IEnumerable<Client>>(clientCollection);
+            foreach (var dto in dtos)
+                ValidateFoundersByClientType(dto);
 
-            foreach (var client in clientEntities)
+            var founderCache = new Dictionary<string, Founder>();
+            var clientEntities = new List<Client>();
+
+            foreach (var dto in dtos)
             {
-                _repository.Client.CreateClient(client);
+                var clientEntity = await ResolveOrCreateClientAsync(dto, founderCache, ct);
+                clientEntities.Add(clientEntity);
             }
 
             await _repository.SaveAsync(ct);
