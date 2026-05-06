@@ -25,6 +25,8 @@ namespace ClientManager.Core.Services
                 .ForMember(cf => cf.Founder, opt => opt.MapFrom(src => src));
 
             CreateMap<FounderForUpdateDto, Founder>();
+
+            CreateMap<ClientForUpdateDto, Client>();
         }
     }
 }

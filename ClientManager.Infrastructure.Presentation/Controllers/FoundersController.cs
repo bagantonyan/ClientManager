@@ -51,7 +51,7 @@ namespace ClientManager.Infrastructure.Presentation.Controllers
         public async Task<IActionResult> UpdateFounderForClient(Guid clientId, Guid id, [FromBody] FounderForUpdateDto founder, CancellationToken ct)
         {
             if (founder is null)
-                return BadRequest("EmployeeForUpdateDto object is null");
+                return BadRequest("FounderForUpdateDto object is null");
 
             await _service.FounderService.UpdateFounderForClientAsync(clientId, id, founder, clientTrackChanges: false, founderTrackChanges: true, ct);
 

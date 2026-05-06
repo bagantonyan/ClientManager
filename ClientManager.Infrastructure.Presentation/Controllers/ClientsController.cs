@@ -66,5 +66,16 @@ namespace ClientManager.Infrastructure.Presentation.Controllers
 
             return NoContent();
         }
+
+        [HttpPut("{id:guid}")]
+        public async Task<IActionResult> UpdateClient(Guid id, [FromBody] ClientForUpdateDto client, CancellationToken ct)
+        {
+            if (client is null)
+                return BadRequest("ClientForUpdateDto object is null");
+
+            await _service.ClientService.UpdateClientAsync(id, client, trackChanges: true, ct);
+
+            return NoContent();
+        }
     }
 }
