@@ -1,11 +1,12 @@
 ﻿using ClientManager.Core.Domain.Entities;
 using Shared.DataTransferObjects.Clients;
+using Shared.RequestFeatures;
 
 namespace ClientManager.Core.Services.Abstractions
 {
     public interface IClientService
     {
-        Task<IEnumerable<ClientDto>> GetAllClientsAsync(bool trackChanges, bool includeFounders, CancellationToken ct = default);
+        Task<(IEnumerable<ClientDto> clients, MetaData metaData)> GetAllClientsAsync(ClientParameters clientParameters, bool trackChanges, bool includeFounders, CancellationToken ct = default);
         Task<ClientDto> GetClientAsync(Guid clientId, bool trackChanges, bool includeFounders, CancellationToken ct = default);
         Task<ClientDto> CreateClientAsync(ClientForCreationDto client, CancellationToken ct = default);
         Task<IEnumerable<ClientDto>> GetByIdsAsync(IEnumerable<Guid> ids, bool trackChanges, bool includeFounders, CancellationToken ct = default);

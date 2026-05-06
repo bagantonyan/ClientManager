@@ -5,6 +5,8 @@ using FluentValidation;
 using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
 using Shared.DataTransferObjects.Clients;
+using Shared.RequestFeatures;
+using System.Text.Json;
 
 namespace ClientManager.Infrastructure.Presentation.Controllers
 {
@@ -17,15 +19,23 @@ namespace ClientManager.Infrastructure.Presentation.Controllers
         public ClientsController(IServiceManager service) => _service = service;
 
         [HttpGet]
-        public async Task<IActionResult> GetClients(CancellationToken ct, [FromQuery] bool includeFounders = true)
+        public async Task<IActionResult> GetClients(
+            [FromQuery] ClientParameters clientParameters, 
+            CancellationToken ct, 
+            [FromQuery] bool includeFounders = true)
         {
-            var clients = await _service.ClientService.GetAllClientsAsync(trackChanges: false, includeFounders, ct);
+            var pagedResult = await _service.ClientService.GetAllClientsAsync(clientParameters, trackChanges: false, includeFounders, ct);
 
-            return Ok(clients);
+            Response.Headers.Add("X-Pagination", JsonSerializer.Serialize(pagedResult.metaData));
+
+            return Ok(pagedResult.clients);
         }
 
         [HttpGet("{id:guid}", Name = "ClientById")]
-        public async Task<IActionResult> GetClient(Guid id, CancellationToken ct, [FromQuery] bool includeFounders = true)
+        public async Task<IActionResult> GetClient(
+            Guid id, 
+            CancellationToken ct, 
+            [FromQuery] bool includeFounders = true)
         {
             var client = await _service.ClientService.GetClientAsync(id, trackChanges: false, includeFounders, ct);
 

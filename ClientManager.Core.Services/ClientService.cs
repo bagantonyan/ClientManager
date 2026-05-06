@@ -6,6 +6,7 @@ using ClientManager.Core.Services.Abstractions;
 using LoggingService;
 using Shared.DataTransferObjects.Clients;
 using Shared.Enums;
+using Shared.RequestFeatures;
 
 namespace ClientManager.Core.Services
 {
@@ -24,13 +25,13 @@ namespace ClientManager.Core.Services
             _mapper = mapper;
         }
 
-        public async Task<IEnumerable<ClientDto>> GetAllClientsAsync(bool trackChanges, bool includeFounders, CancellationToken ct = default)
+        public async Task<(IEnumerable<ClientDto> clients, MetaData metaData)> GetAllClientsAsync(ClientParameters clientParameters, bool trackChanges, bool includeFounders, CancellationToken ct = default)
         {
-            var clients = await _repository.Client.GetAllClientsAsync(trackChanges, includeFounders, ct);
+            var clientsWithMetaData = await _repository.Client.GetAllClientsAsync(clientParameters, trackChanges, includeFounders, ct);
 
-            var clientsDto = _mapper.Map<IEnumerable<ClientDto>>(clients);
+            var clientsDto = _mapper.Map<IEnumerable<ClientDto>>(clientsWithMetaData);
 
-            return clientsDto;
+            return (clients: clientsDto, metaData: clientsWithMetaData.MetaData);
         }
 
         public async Task<ClientDto> GetClientAsync(Guid id, bool trackChanges, bool includeFounders, CancellationToken ct = default)
@@ -54,7 +55,6 @@ namespace ClientManager.Core.Services
                 if (existing.DeletedDate is null)
                     throw new ClientWithSameInnExistsException(client.INN!);
 
-                // Restore the soft-deleted client
                 existing.DeletedDate = null;
                 existing.Name = client.Name;
                 existing.ClientType = client.ClientType;
@@ -71,8 +71,6 @@ namespace ClientManager.Core.Services
                 _repository.Client.CreateClient(clientEntity);
             }
 
-            // Resolve each founder by INN: existing (active or restored) → reuse; otherwise → create.
-            // This handles the unique-INN constraint correctly when a person is a founder of multiple clients.
             if (client.Founders is not null && client.Founders.Any())
             {
                 var resolved = new List<ClientFounder>();
