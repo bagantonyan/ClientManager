@@ -2,6 +2,7 @@
 using ClientManager.Infrastructure.Presentation.Validators;
 using FluentValidation;
 using LoggingService;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
 using Shared.DataTransferObjects.Founders;
@@ -22,7 +23,15 @@ namespace ClientManager.Infrastructure.Presentation.Controllers
             _logger = logger;
         }
 
+        /// <summary>
+        /// Get all founders of a client
+        /// </summary>
+        /// <param name="clientId">Client id</param>
+        /// <param name="ct">Cancellation token</param>
+        /// <returns>The founders list</returns>
         [HttpGet]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> GetFoundersForClient(Guid clientId, CancellationToken ct)
         {
             var founders = await _service.FounderService.GetFoundersAsync(clientId, trackChanges: false, ct);
@@ -30,7 +39,16 @@ namespace ClientManager.Infrastructure.Presentation.Controllers
             return Ok(founders);
         }
 
+        /// <summary>
+        /// Get a specific founder of a client
+        /// </summary>
+        /// <param name="clientId">Client id</param>
+        /// <param name="id">Founder id</param>
+        /// <param name="ct">Cancellation token</param>
+        /// <returns>The founder</returns>
         [HttpGet("{id:guid}", Name = "GetFounderForClient")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> GetFounderForClient(Guid clientId, Guid id, CancellationToken ct)
         {
             var founder = await _service.FounderService.GetFounderAsync(clientId, id, trackChanges: false, ct);
@@ -38,9 +56,22 @@ namespace ClientManager.Infrastructure.Presentation.Controllers
             return Ok(founder);
         }
 
+        /// <summary>
+        /// Add a founder to a client. If a founder with the same INN exists (active or soft-deleted),
+        /// it is reused or restored instead of creating a duplicate.
+        /// </summary>
+        /// <param name="clientId">Client id (must be of type Legal_Entity)</param>
+        /// <param name="founder">Founder data</param>
+        /// <param name="validator">Validator (resolved from DI)</param>
+        /// <param name="ct">Cancellation token</param>
+        /// <returns>The newly created or restored founder</returns>
         [HttpPost]
+        [ProducesResponseType(StatusCodes.Status201Created)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
         public async Task<IActionResult> CreateFounderForClient(
-            Guid clientId, 
+            Guid clientId,
             [FromBody] FounderForCreationDto founder,
             [FromServices] IValidator<FounderForCreationDto> validator,
             CancellationToken ct)
@@ -63,7 +94,17 @@ namespace ClientManager.Infrastructure.Presentation.Controllers
             return CreatedAtRoute("GetFounderForClient", new { clientId, id = founderToReturn.Id }, founderToReturn);
         }
 
+        /// <summary>
+        /// Unlink a founder from a client. If the founder has no other active links, soft-deletes
+        /// the founder as well. Removing the last founder of a Legal_Entity is forbidden.
+        /// </summary>
+        /// <param name="clientId">Client id</param>
+        /// <param name="id">Founder id</param>
+        /// <param name="ct">Cancellation token</param>
         [HttpDelete("{id:guid}")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> DeleteFounderForClient(Guid clientId, Guid id, CancellationToken ct)
         {
             await _service.FounderService.DeleteFounderForClientAsync(clientId, id, trackChanges: true, ct);
@@ -71,7 +112,19 @@ namespace ClientManager.Infrastructure.Presentation.Controllers
             return NoContent();
         }
 
+        /// <summary>
+        /// Partially update a founder of a client via JSON Patch
+        /// </summary>
+        /// <param name="clientId">Client id</param>
+        /// <param name="id">Founder id</param>
+        /// <param name="patchDoc">JSON Patch document (RFC 6902)</param>
+        /// <param name="validator">Validator (resolved from DI)</param>
+        /// <param name="ct">Cancellation token</param>
         [HttpPatch("{id:guid}")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
         public async Task<IActionResult> PartiallyUpdateFounderForClient(
             Guid clientId,
             Guid id,

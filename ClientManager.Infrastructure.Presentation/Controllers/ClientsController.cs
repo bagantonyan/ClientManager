@@ -28,14 +28,19 @@ namespace ClientManager.Infrastructure.Presentation.Controllers
         }
 
         /// <summary>
-        /// Get all clients
+        /// Get a paged list of clients
         /// </summary>
-        /// <returns>The clients list</returns>
+        /// <param name="clientParameters">Pagination, sorting and search parameters</param>
+        /// <param name="ct">Cancellation token</param>
+        /// <param name="includeFounders">Whether to include founders for each client</param>
+        /// <returns>The clients list with pagination metadata in the X-Pagination response header</returns>
         [HttpGet]
         [EnableRateLimiting("SpecificPolicy")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status429TooManyRequests)]
         public async Task<IActionResult> GetClients(
-            [FromQuery] ClientParameters clientParameters, 
-            CancellationToken ct, 
+            [FromQuery] ClientParameters clientParameters,
+            CancellationToken ct,
             [FromQuery] bool includeFounders = true)
         {
             var pagedResult = await _service.ClientService.GetAllClientsAsync(clientParameters, trackChanges: false, includeFounders, ct);
@@ -45,11 +50,20 @@ namespace ClientManager.Infrastructure.Presentation.Controllers
             return Ok(pagedResult.clients);
         }
 
+        /// <summary>
+        /// Get a specific client by id
+        /// </summary>
+        /// <param name="id">Client id</param>
+        /// <param name="ct">Cancellation token</param>
+        /// <param name="includeFounders">Whether to include the client's founders</param>
+        /// <returns>The client</returns>
         [HttpGet("{id:guid}", Name = "ClientById")]
         [DisableRateLimiting]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> GetClient(
-            Guid id, 
-            CancellationToken ct, 
+            Guid id,
+            CancellationToken ct,
             [FromQuery] bool includeFounders = true)
         {
             var client = await _service.ClientService.GetClientAsync(id, trackChanges: false, includeFounders, ct);
@@ -88,7 +102,16 @@ namespace ClientManager.Infrastructure.Presentation.Controllers
             return CreatedAtRoute("ClientById", new { id = createdClient.Id }, createdClient);
         }
 
+        /// <summary>
+        /// Get a collection of clients by their ids
+        /// </summary>
+        /// <param name="ids">Comma-separated list of client ids in the URL: /collection/(id1,id2,id3)</param>
+        /// <param name="ct">Cancellation token</param>
+        /// <param name="includeFounders">Whether to include founders for each client</param>
+        /// <returns>The clients</returns>
         [HttpGet("collection/({ids})", Name = "ClientCollection")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> GetClientCollection(
             [ModelBinder(BinderType = typeof(ArrayModelBinder))] IEnumerable<Guid> ids,
             CancellationToken ct,
@@ -99,7 +122,17 @@ namespace ClientManager.Infrastructure.Presentation.Controllers
             return Ok(clients);
         }
 
+        /// <summary>
+        /// Create a collection of clients in a single atomic operation
+        /// </summary>
+        /// <param name="clientCollection">The clients to create</param>
+        /// <param name="validator">Validator (resolved from DI)</param>
+        /// <param name="ct">Cancellation token</param>
+        /// <returns>The newly created clients</returns>
         [HttpPost("collection")]
+        [ProducesResponseType(StatusCodes.Status201Created)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
         public async Task<IActionResult> CreateClientCollection(
             [FromBody] IEnumerable<ClientForCreationDto> clientCollection,
             [FromServices] IValidator<ClientForCreationDto> validator,
@@ -125,7 +158,15 @@ namespace ClientManager.Infrastructure.Presentation.Controllers
             return CreatedAtRoute("ClientCollection", new { result.ids }, result.clients);
         }
 
+        /// <summary>
+        /// Soft-delete a client. Cascade-soft-deletes its ClientFounder links and any founders that
+        /// become orphaned (no longer linked to any other client).
+        /// </summary>
+        /// <param name="id">Client id</param>
+        /// <param name="ct">Cancellation token</param>
         [HttpDelete("{id:guid}")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> DeleteClient(Guid id, CancellationToken ct)
         {
             await _service.ClientService.DeleteClientAsync(id, ct);
@@ -133,7 +174,18 @@ namespace ClientManager.Infrastructure.Presentation.Controllers
             return NoContent();
         }
 
+        /// <summary>
+        /// Partially update a client via JSON Patch
+        /// </summary>
+        /// <param name="id">Client id</param>
+        /// <param name="patchDoc">JSON Patch document (RFC 6902)</param>
+        /// <param name="validator">Validator (resolved from DI)</param>
+        /// <param name="ct">Cancellation token</param>
         [HttpPatch("{id:guid}")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
         public async Task<IActionResult> PartiallyUpdateClient(
             Guid id,
             [FromBody] JsonPatchDocument<ClientForUpdateDto> patchDoc,

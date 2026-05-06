@@ -6,15 +6,109 @@
     <members>
         <member name="M:ClientManager.Infrastructure.Presentation.Controllers.ClientsController.GetClients(Shared.RequestFeatures.ClientParameters,System.Threading.CancellationToken,System.Boolean)">
             <summary>
-            Get all clients
+            Get a paged list of clients
             </summary>
-            <returns>The clients list</returns>
+            <param name="clientParameters">Pagination, sorting and search parameters</param>
+            <param name="ct">Cancellation token</param>
+            <param name="includeFounders">Whether to include founders for each client</param>
+            <returns>The clients list with pagination metadata in the X-Pagination response header</returns>
+        </member>
+        <member name="M:ClientManager.Infrastructure.Presentation.Controllers.ClientsController.GetClient(System.Guid,System.Threading.CancellationToken,System.Boolean)">
+            <summary>
+            Get a specific client by id
+            </summary>
+            <param name="id">Client id</param>
+            <param name="ct">Cancellation token</param>
+            <param name="includeFounders">Whether to include the client's founders</param>
+            <returns>The client</returns>
         </member>
         <member name="M:ClientManager.Infrastructure.Presentation.Controllers.ClientsController.CreateClient(Shared.DataTransferObjects.Clients.ClientForCreationDto,FluentValidation.IValidator{Shared.DataTransferObjects.Clients.ClientForCreationDto},System.Threading.CancellationToken)">
             <summary>
             Create new client
             </summary>
             <returns>A newly created client</returns>
+        </member>
+        <member name="M:ClientManager.Infrastructure.Presentation.Controllers.ClientsController.GetClientCollection(System.Collections.Generic.IEnumerable{System.Guid},System.Threading.CancellationToken,System.Boolean)">
+            <summary>
+            Get a collection of clients by their ids
+            </summary>
+            <param name="ids">Comma-separated list of client ids in the URL: /collection/(id1,id2,id3)</param>
+            <param name="ct">Cancellation token</param>
+            <param name="includeFounders">Whether to include founders for each client</param>
+            <returns>The clients</returns>
+        </member>
+        <member name="M:ClientManager.Infrastructure.Presentation.Controllers.ClientsController.CreateClientCollection(System.Collections.Generic.IEnumerable{Shared.DataTransferObjects.Clients.ClientForCreationDto},FluentValidation.IValidator{Shared.DataTransferObjects.Clients.ClientForCreationDto},System.Threading.CancellationToken)">
+            <summary>
+            Create a collection of clients in a single atomic operation
+            </summary>
+            <param name="clientCollection">The clients to create</param>
+            <param name="validator">Validator (resolved from DI)</param>
+            <param name="ct">Cancellation token</param>
+            <returns>The newly created clients</returns>
+        </member>
+        <member name="M:ClientManager.Infrastructure.Presentation.Controllers.ClientsController.DeleteClient(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Soft-delete a client. Cascade-soft-deletes its ClientFounder links and any founders that
+            become orphaned (no longer linked to any other client).
+            </summary>
+            <param name="id">Client id</param>
+            <param name="ct">Cancellation token</param>
+        </member>
+        <member name="M:ClientManager.Infrastructure.Presentation.Controllers.ClientsController.PartiallyUpdateClient(System.Guid,Microsoft.AspNetCore.JsonPatch.JsonPatchDocument{Shared.DataTransferObjects.Clients.ClientForUpdateDto},FluentValidation.IValidator{Shared.DataTransferObjects.Clients.ClientForUpdateDto},System.Threading.CancellationToken)">
+            <summary>
+            Partially update a client via JSON Patch
+            </summary>
+            <param name="id">Client id</param>
+            <param name="patchDoc">JSON Patch document (RFC 6902)</param>
+            <param name="validator">Validator (resolved from DI)</param>
+            <param name="ct">Cancellation token</param>
+        </member>
+        <member name="M:ClientManager.Infrastructure.Presentation.Controllers.FoundersController.GetFoundersForClient(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Get all founders of a client
+            </summary>
+            <param name="clientId">Client id</param>
+            <param name="ct">Cancellation token</param>
+            <returns>The founders list</returns>
+        </member>
+        <member name="M:ClientManager.Infrastructure.Presentation.Controllers.FoundersController.GetFounderForClient(System.Guid,System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Get a specific founder of a client
+            </summary>
+            <param name="clientId">Client id</param>
+            <param name="id">Founder id</param>
+            <param name="ct">Cancellation token</param>
+            <returns>The founder</returns>
+        </member>
+        <member name="M:ClientManager.Infrastructure.Presentation.Controllers.FoundersController.CreateFounderForClient(System.Guid,Shared.DataTransferObjects.Founders.FounderForCreationDto,FluentValidation.IValidator{Shared.DataTransferObjects.Founders.FounderForCreationDto},System.Threading.CancellationToken)">
+            <summary>
+            Add a founder to a client. If a founder with the same INN exists (active or soft-deleted),
+            it is reused or restored instead of creating a duplicate.
+            </summary>
+            <param name="clientId">Client id (must be of type Legal_Entity)</param>
+            <param name="founder">Founder data</param>
+            <param name="validator">Validator (resolved from DI)</param>
+            <param name="ct">Cancellation token</param>
+            <returns>The newly created or restored founder</returns>
+        </member>
+        <member name="M:ClientManager.Infrastructure.Presentation.Controllers.FoundersController.DeleteFounderForClient(System.Guid,System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Unlink a founder from a client. If the founder has no other active links, soft-deletes
+            the founder as well. Removing the last founder of a Legal_Entity is forbidden.
+            </summary>
+            <param name="clientId">Client id</param>
+            <param name="id">Founder id</param>
+            <param name="ct">Cancellation token</param>
+        </member>
+        <member name="M:ClientManager.Infrastructure.Presentation.Controllers.FoundersController.PartiallyUpdateFounderForClient(System.Guid,System.Guid,Microsoft.AspNetCore.JsonPatch.JsonPatchDocument{Shared.DataTransferObjects.Founders.FounderForUpdateDto},FluentValidation.IValidator{Shared.DataTransferObjects.Founders.FounderForUpdateDto},System.Threading.CancellationToken)">
+            <summary>
+            Partially update a founder of a client via JSON Patch
+            </summary>
+            <param name="clientId">Client id</param>
+            <param name="id">Founder id</param>
+            <param name="patchDoc">JSON Patch document (RFC 6902)</param>
+            <param name="validator">Validator (resolved from DI)</param>
+            <param name="ct">Cancellation token</param>
         </member>
     </members>
 </doc>
