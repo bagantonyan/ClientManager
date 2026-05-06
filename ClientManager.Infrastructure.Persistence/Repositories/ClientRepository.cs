@@ -24,8 +24,8 @@ namespace ClientManager.Infrastructure.Persistence.Repositories
                         .ThenInclude(cf => cf.Founder);
 
             var clients = await query
-                .Search(clientParameters.SearchTerm)
-                .OrderBy(c => c.Name)
+                .Search(clientParameters.SearchTerm!)
+                .Sort(clientParameters.OrderBy!)
                 .Skip((clientParameters.PageNumber - 1) * clientParameters.PageSize)
                 .Take(clientParameters.PageSize)
                 .ToListAsync(ct);
