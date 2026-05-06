@@ -19,6 +19,7 @@
 
 	<ItemGroup>
 	  <ProjectReference Include="..\ClientManager.Core.Services.Abstractions\ClientManager.Core.Services.Abstractions.csproj" />
+	  <ProjectReference Include="..\LoggingService\LoggingService.csproj" />
 	</ItemGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">

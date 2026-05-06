@@ -17,28 +17,35 @@ namespace ClientManager
         }
 
         public async ValueTask<bool> TryHandleAsync(
-            HttpContext httpContext, 
+            HttpContext httpContext,
             Exception exception,
             CancellationToken cancellationToken)
         {
             httpContext.Response.ContentType = "application/json";
 
-            httpContext.Response.StatusCode = exception switch
+            var (statusCode, title) = exception switch
             {
-                NotFoundException => StatusCodes.Status404NotFound,
-                BadRequestException => StatusCodes.Status400BadRequest,
-                _ => StatusCodes.Status500InternalServerError
+                NotFoundException => (StatusCodes.Status404NotFound, "Resource not found"),
+                BadRequestException => (StatusCodes.Status400BadRequest, "Bad request"),
+                _ => (StatusCodes.Status500InternalServerError, "An unexpected error occurred")
             };
 
-            _logger.LogError($"Something went wrong: {exception.Message}");
+            httpContext.Response.StatusCode = statusCode;
+
+            var logMessage = $"Request to {httpContext.Request.Method} {httpContext.Request.Path} failed with {statusCode}: {exception.Message}";
+
+            if (statusCode >= 500)
+                _logger.LogError(logMessage);
+            else
+                _logger.LogWarning(logMessage);
 
             var result = await _problemDetailsService.TryWriteAsync(new ProblemDetailsContext
             {
                 HttpContext = httpContext,
                 ProblemDetails =
                 {
-                    Title = "An error occurred",
-                    Status = httpContext.Response.StatusCode,
+                    Title = title,
+                    Status = statusCode,
                     Detail = exception.Message,
                     Type = exception.GetType().Name
                 },
@@ -48,8 +55,8 @@ namespace ClientManager
             if (!result)
                 await httpContext.Response.WriteAsJsonAsync(new ProblemDetails
                 {
-                    Title = "An error occurred",
-                    Status = httpContext.Response.StatusCode,
+                    Title = title,
+                    Status = statusCode,
                     Detail = exception.Message,
                     Type = exception.GetType().Name
                 });

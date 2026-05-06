@@ -80,7 +80,7 @@ namespace ClientManager.Extensions
                     partition => new FixedWindowRateLimiterOptions
                     {
                         AutoReplenishment = true,
-                        PermitLimit = 5,
+                        PermitLimit = 50,
                         QueueLimit = 2,
                         QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
                         Window = TimeSpan.FromMinutes(1)
@@ -91,7 +91,7 @@ namespace ClientManager.Extensions
                     partition => new FixedWindowRateLimiterOptions
                     {
                         AutoReplenishment = true,
-                        PermitLimit = 3,
+                        PermitLimit = 10,
                         Window = TimeSpan.FromSeconds(10)
                     }));
 

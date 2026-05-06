@@ -2,6 +2,7 @@
 using ClientManager.Infrastructure.Presentation.ModelBinders;
 using ClientManager.Infrastructure.Presentation.Validators;
 using FluentValidation;
+using LoggingService;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
@@ -18,8 +19,13 @@ namespace ClientManager.Infrastructure.Presentation.Controllers
     public class ClientsController : ControllerBase
     {
         private readonly IServiceManager _service;
+        private readonly ILoggerManager _logger;
 
-        public ClientsController(IServiceManager service) => _service = service;
+        public ClientsController(IServiceManager service, ILoggerManager logger)
+        {
+            _service = service;
+            _logger = logger;
+        }
 
         /// <summary>
         /// Get all clients
@@ -34,7 +40,7 @@ namespace ClientManager.Infrastructure.Presentation.Controllers
         {
             var pagedResult = await _service.ClientService.GetAllClientsAsync(clientParameters, trackChanges: false, includeFounders, ct);
 
-            Response.Headers.Add("X-Pagination", JsonSerializer.Serialize(pagedResult.metaData));
+            Response.Headers["X-Pagination"] = JsonSerializer.Serialize(pagedResult.metaData);
 
             return Ok(pagedResult.clients);
         }
@@ -65,11 +71,17 @@ namespace ClientManager.Infrastructure.Presentation.Controllers
             CancellationToken ct)
         {
             if (client is null)
+            {
+                _logger.LogWarning("CreateClient: request body is null.");
                 return BadRequest("ClientForCreationDto object is null");
+            }
 
             var valResult = validator.Validate(client);
             if (!valResult.IsValid)
+            {
+                _logger.LogWarning($"CreateClient validation failed: {valResult.FormatErrors()}");
                 return UnprocessableEntity(valResult.ToDictionary());
+            }
 
             var createdClient = await _service.ClientService.CreateClientAsync(client, ct);
 
@@ -94,13 +106,19 @@ namespace ClientManager.Infrastructure.Presentation.Controllers
             CancellationToken ct)
         {
             if (clientCollection is null)
+            {
+                _logger.LogWarning("CreateClientCollection: request body is null.");
                 return BadRequest("ClientCollection object is null");
+            }
 
             var clients = clientCollection.ToList();
 
             var errors = validator.ValidateCollection(clients);
             if (errors.Count > 0)
+            {
+                _logger.LogWarning($"CreateClientCollection validation failed for {errors.Count} field(s).");
                 return UnprocessableEntity(errors);
+            }
 
             var result = await _service.ClientService.CreateClientCollectionAsync(clients, ct);
 
@@ -123,18 +141,27 @@ namespace ClientManager.Infrastructure.Presentation.Controllers
             CancellationToken ct)
         {
             if (patchDoc is null)
+            {
+                _logger.LogWarning($"PartiallyUpdateClient {id}: patchDoc is null.");
                 return BadRequest("patchDoc object sent from client is null.");
+            }
 
             var result = await _service.ClientService.GetClientForPatchAsync(id, trackChanges: true, ct);
 
             patchDoc.ApplyTo(result.clientToPatch, ModelState);
 
             if (!ModelState.IsValid)
+            {
+                _logger.LogWarning($"PartiallyUpdateClient {id} patch apply failed: {ModelState.FormatErrors()}");
                 return UnprocessableEntity(ModelState);
+            }
 
             var valResult = validator.Validate(result.clientToPatch);
             if (!valResult.IsValid)
+            {
+                _logger.LogWarning($"PartiallyUpdateClient {id} validation failed: {valResult.FormatErrors()}");
                 return UnprocessableEntity(valResult.ToDictionary());
+            }
 
             await _service.ClientService.SaveChangesForPatchAsync(result.clientToPatch, result.clientEntity, ct);
 

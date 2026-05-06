@@ -59,6 +59,15 @@ namespace ClientManager
 
             var app = builder.Build();
 
+            app.Lifetime.ApplicationStarted.Register(() =>
+                Log.Information("Application started. Environment: {Environment}.", app.Environment.EnvironmentName));
+            app.Lifetime.ApplicationStopping.Register(() =>
+                Log.Information("Application is stopping..."));
+            app.Lifetime.ApplicationStopped.Register(() =>
+                Log.Information("Application stopped."));
+
+            app.UseSerilogRequestLogging();
+
             if (app.Environment.IsDevelopment())
             {
                 app.UseSwagger();
@@ -91,7 +100,19 @@ namespace ClientManager
 
             app.MapControllers();
 
-            app.Run();
+            try
+            {
+                Log.Information("Starting ClientManager web host...");
+                app.Run();
+            }
+            catch (Exception ex)
+            {
+                Log.Fatal(ex, "ClientManager web host terminated unexpectedly.");
+            }
+            finally
+            {
+                Log.CloseAndFlush();
+            }
         }
 
         static NewtonsoftJsonPatchInputFormatter GetJsonPatchInputFormatter() =>

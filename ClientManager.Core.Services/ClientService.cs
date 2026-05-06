@@ -53,6 +53,8 @@ namespace ClientManager.Core.Services
 
             await _repository.SaveAsync(ct);
 
+            _logger.LogInformation($"Client saved. Id: {clientEntity.Id}, INN: {clientEntity.INN}.");
+
             var clientToReturn = _mapper.Map<ClientDto>(clientEntity);
 
             return clientToReturn;
@@ -69,8 +71,12 @@ namespace ClientManager.Core.Services
             if (existing is not null)
             {
                 if (existing.DeletedDate is null)
+                {
+                    _logger.LogWarning($"Attempt to create client with already-active INN {dto.INN}.");
                     throw new ClientWithSameInnExistsException(dto.INN!);
+                }
 
+                _logger.LogInformation($"Restoring soft-deleted client. Id: {existing.Id}, INN: {existing.INN}.");
                 existing.DeletedDate = null;
                 existing.Name = dto.Name;
                 existing.ClientType = dto.ClientType;
@@ -78,6 +84,7 @@ namespace ClientManager.Core.Services
             }
             else
             {
+                _logger.LogDebug($"Creating new client. INN: {dto.INN}.");
                 clientEntity = new Client
                 {
                     INN = dto.INN,
@@ -107,7 +114,10 @@ namespace ClientManager.Core.Services
             CancellationToken ct)
         {
             if (cache.TryGetValue(dto.INN!, out var cached))
+            {
+                _logger.LogDebug($"Founder INN {dto.INN} resolved from in-request cache.");
                 return cached;
+            }
 
             var existing = await _repository.Founder.GetByInnIncludingDeletedAsync(dto.INN!, trackChanges: true, ct);
 
@@ -116,13 +126,19 @@ namespace ClientManager.Core.Services
             {
                 if (existing.DeletedDate is not null)
                 {
+                    _logger.LogInformation($"Restoring soft-deleted founder. Id: {existing.Id}, INN: {existing.INN}.");
                     existing.DeletedDate = null;
                     existing.FullName = dto.FullName;
+                }
+                else
+                {
+                    _logger.LogDebug($"Reusing existing active founder. Id: {existing.Id}, INN: {existing.INN}.");
                 }
                 result = existing;
             }
             else
             {
+                _logger.LogDebug($"Creating new founder. INN: {dto.INN}.");
                 result = _mapper.Map<Founder>(dto);
             }
 
@@ -133,12 +149,18 @@ namespace ClientManager.Core.Services
         public async Task<IEnumerable<ClientDto>> GetByIdsAsync(IEnumerable<Guid> ids, bool trackChanges, bool includeFounders, CancellationToken ct = default)
         {
             if (ids is null)
+            {
+                _logger.LogError("Parameter ids sent from controller is null.");
                 throw new IdParametersBadRequestException();
+            }
 
             var clientEntities = await _repository.Client.GetByIdsAsync(ids, trackChanges, includeFounders, ct);
 
             if (ids.Count() != clientEntities.Count())
+            {
+                _logger.LogWarning($"GetByIds: requested {ids.Count()}, found {clientEntities.Count()}.");
                 throw new CollectionByIdsBadRequestException();
+            }
 
             var clientsToReturn = _mapper.Map<IEnumerable<ClientDto>>(clientEntities);
 
@@ -148,7 +170,10 @@ namespace ClientManager.Core.Services
         public async Task<(IEnumerable<ClientDto> clients, string ids)> CreateClientCollectionAsync(IEnumerable<ClientForCreationDto> clientCollection, CancellationToken ct = default)
         {
             if (clientCollection is null)
+            {
+                _logger.LogError("Client collection sent from controller is null.");
                 throw new ClientCollectionBadRequest();
+            }
 
             var dtos = clientCollection.ToList();
 
@@ -166,6 +191,8 @@ namespace ClientManager.Core.Services
 
             await _repository.SaveAsync(ct);
 
+            _logger.LogInformation($"Client collection saved. Count: {clientEntities.Count}.");
+
             var clientCollectionToReturn = _mapper.Map<IEnumerable<ClientDto>>(clientEntities);
 
             var ids = string.Join(",", clientCollectionToReturn.Select(c => c.Id));
@@ -178,8 +205,12 @@ namespace ClientManager.Core.Services
             var client = await _repository.Client.GetClientForDeletionAsync(clientId, ct);
 
             if (client is null)
+            {
+                _logger.LogWarning($"Delete failed: client {clientId} not found.");
                 throw new ClientNotFoundException(clientId);
+            }
 
+            var orphanedFounders = 0;
             if (client.ClientFounders is not null)
             {
                 foreach (var link in client.ClientFounders.ToList())
@@ -192,6 +223,7 @@ namespace ClientManager.Core.Services
                         && !founder.ClientFounders!.Any(cf => cf.ClientId != clientId))
                     {
                         _repository.Founder.DeleteFounder(founder);
+                        orphanedFounders++;
                     }
                 }
             }
@@ -199,6 +231,8 @@ namespace ClientManager.Core.Services
             _repository.Client.DeleteClient(client);
 
             await _repository.SaveAsync(ct);
+
+            _logger.LogInformation($"Client {clientId} soft-deleted. Orphaned founders also soft-deleted: {orphanedFounders}.");
         }
 
         public async Task<(ClientForUpdateDto clientToPatch, Client clientEntity)> GetClientForPatchAsync(Guid clientId, bool trackChanges, CancellationToken ct = default)
@@ -215,6 +249,8 @@ namespace ClientManager.Core.Services
             _mapper.Map(clientToPatch, clientEntity);
 
             await _repository.SaveAsync(ct);
+
+            _logger.LogInformation($"Client {clientEntity.Id} updated via patch.");
         }
 
         private void ValidateFoundersByClientType(ClientForCreationDto client)
@@ -222,10 +258,16 @@ namespace ClientManager.Core.Services
             var hasFounders = client.Founders is not null && client.Founders.Any();
 
             if (client.ClientType == ClientType.Legal_Entity && !hasFounders)
+            {
+                _logger.LogWarning("Validation failed: legal entity must have at least one founder.");
                 throw new LegalEntityWithoutFoundersException();
+            }
 
             if (client.ClientType != ClientType.Legal_Entity && hasFounders)
+            {
+                _logger.LogWarning($"Validation failed: founders are not allowed for client type {client.ClientType}.");
                 throw new FounderNotAllowedForClientException();
+            }
         }
 
         private async Task<Client> GetAndCheckIfClientExistsAsync(Guid clientId, bool trackChanges, bool includeFounders, CancellationToken ct)
@@ -233,7 +275,10 @@ namespace ClientManager.Core.Services
             var clientEntity = await _repository.Client.GetClientAsync(clientId, trackChanges, includeFounders, ct);
 
             if (clientEntity is null)
+            {
+                _logger.LogWarning($"Client {clientId} not found in the database.");
                 throw new ClientNotFoundException(clientId);
+            }
 
             return clientEntity;
         }
