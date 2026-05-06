@@ -6,7 +6,7 @@ namespace ClientManager.Infrastructure.Persistence
 {
     public class RepositoryContext : DbContext
     {
-        public RepositoryContext(DbContextOptions options)
+        public RepositoryContext(DbContextOptions<RepositoryContext> options)
             : base(options)
         {
         }

@@ -41,6 +41,8 @@ namespace ClientManager
 
             builder.Services.ConfigureRateLimitingOptions();
 
+            builder.Services.ConfigureHealthChecks(builder.Configuration);
+
             builder.Services.AddControllers(config =>
             {
                 config.InputFormatters.Insert(0, GetJsonPatchInputFormatter());
@@ -71,6 +73,8 @@ namespace ClientManager
             app.UseExceptionHandler(opt => { });
 
             app.UseHttpsRedirection();
+
+            app.ConfigureHealthChecksEndpoints();
 
             app.UseStaticFiles();
 

@@ -3,7 +3,9 @@ using ClientManager.Core.Domain.Repositories;
 using ClientManager.Core.Services;
 using ClientManager.Core.Services.Abstractions;
 using ClientManager.Infrastructure.Persistence;
+using HealthChecks.UI.Client;
 using LoggingService;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.EntityFrameworkCore;
 using System.Threading.RateLimiting;
 
@@ -90,6 +92,25 @@ namespace ClientManager.Extensions
                             .WriteAsync("Too many requests. Please try again later.", token);
                 };
             });
+        }
+
+        public static void ConfigureHealthChecks(this IServiceCollection services, IConfiguration configuration)
+        {
+            services.AddHealthChecks()
+                .AddSqlServer(configuration.GetConnectionString("sqlConnection")!, name: "Sql Health");
+
+            services.AddHealthChecksUI()
+                .AddInMemoryStorage();
+        }
+
+        public static void ConfigureHealthChecksEndpoints(this WebApplication app)
+        {
+            app.MapHealthChecks("/health", new HealthCheckOptions
+            {
+                ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse
+            });
+
+            app.MapHealthChecksUI();
         }
     }
 }
