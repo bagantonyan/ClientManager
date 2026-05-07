@@ -2,7 +2,7 @@
 {
     public class ClientParameters : RequestParameters
     {
-        public ClientParameters() => OrderBy = "name";
+        public ClientParameters() => OrderBy = "Name";
         public string? SearchTerm { get; set; }
     }
 }

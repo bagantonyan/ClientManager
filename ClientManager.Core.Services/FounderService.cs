@@ -66,10 +66,9 @@ namespace ClientManager.Core.Services
                 {
                     _logger.LogInformation($"Restoring soft-deleted founder. Id: {existing.Id}, INN: {existing.INN}.");
                     existing.DeletedDate = null;
-                    existing.FullName = founderForCreation.FullName;
+                    existing.FullName = founderForCreation.FullName!;
                 }
 
-                existing.ClientFounders ??= new List<ClientFounder>();
                 if (existing.ClientFounders.Any(cf => cf.ClientId == clientId))
                 {
                     _logger.LogWarning($"Founder {existing.Id} is already linked to client {clientId}.");

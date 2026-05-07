@@ -1,36 +1,35 @@
-﻿using System.Reflection;
 using System.Text;
 
 namespace ClientManager.Infrastructure.Persistence.Extensions.Utility
 {
     public static class OrderQueryBuilder
     {
-        public static string CreateOrderQuery<T>(string orderByQueryString)
+        public static string CreateOrderQuery(
+            string orderByQueryString,
+            IReadOnlyCollection<string> allowedFields)
         {
-            var orderParams = orderByQueryString.Trim().Split(',');
-            var propertyInfos = typeof(T).GetProperties(BindingFlags.Public | BindingFlags.Instance);
             var orderQueryBuilder = new StringBuilder();
 
-            foreach (var param in orderParams)
+            foreach (var raw in orderByQueryString.Trim().Split(','))
             {
-                if (string.IsNullOrWhiteSpace(param))
+                var param = raw.Trim();
+                if (string.IsNullOrEmpty(param))
                     continue;
 
-                var propertyFromQueryName = param.Split(" ")[0];
-                var objectProperty = propertyInfos.FirstOrDefault(pi =>
-                    pi.Name.Equals(propertyFromQueryName, StringComparison.InvariantCultureIgnoreCase));
-
-                if (objectProperty == null)
+                var requestedName = param.Split(' ')[0];
+                var canonical = allowedFields
+                    .FirstOrDefault(f => string.Equals(f, requestedName, StringComparison.OrdinalIgnoreCase));
+                if (canonical is null)
                     continue;
 
-                var direction = param.EndsWith(" desc") ? "descending" : "ascending";
+                var direction = param.EndsWith(" desc", StringComparison.OrdinalIgnoreCase)
+                    ? "descending"
+                    : "ascending";
 
-                orderQueryBuilder.Append($"{objectProperty.Name.ToString()} {direction}, ");
+                orderQueryBuilder.Append($"{canonical} {direction}, ");
             }
 
-            var orderQuery = orderQueryBuilder.ToString().TrimEnd(',', ' ');
-
-            return orderQuery;
+            return orderQueryBuilder.ToString().TrimEnd(',', ' ');
         }
     }
 }

@@ -6,9 +6,12 @@ namespace ClientManager.Infrastructure.Persistence
 {
     public class RepositoryContext : DbContext
     {
-        public RepositoryContext(DbContextOptions<RepositoryContext> options)
+        private readonly TimeProvider _timeProvider;
+
+        public RepositoryContext(DbContextOptions<RepositoryContext> options, TimeProvider timeProvider)
             : base(options)
         {
+            _timeProvider = timeProvider;
         }
 
         public DbSet<Client>? Clients { get; set; }
@@ -22,7 +25,7 @@ namespace ClientManager.Infrastructure.Persistence
 
         public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         {
-            ChangeTracker.SetAuditProperties();
+            ChangeTracker.SetAuditProperties(_timeProvider);
 
             return base.SaveChangesAsync(cancellationToken);
         }

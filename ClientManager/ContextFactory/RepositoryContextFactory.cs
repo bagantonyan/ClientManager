@@ -17,7 +17,7 @@ namespace ClientManager.ContextFactory
                 .UseSqlServer(configuration.GetConnectionString("sqlConnection"),
                     b => b.MigrationsAssembly("ClientManager.Infrastructure.Persistence"));
 
-            return new RepositoryContext(builder.Options);
+            return new RepositoryContext(builder.Options, TimeProvider.System);
         }
     }
 }

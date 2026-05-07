@@ -20,6 +20,8 @@ namespace ClientManager
 
             builder.Services.ConfigureLoggerService();
 
+            builder.Services.ConfigureTimeProvider();
+
             builder.Services.ConfigureRepositoryManager();
 
             builder.Services.ConfigureServiceManager();

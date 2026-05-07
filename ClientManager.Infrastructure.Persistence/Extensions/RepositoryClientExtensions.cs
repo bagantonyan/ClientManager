@@ -7,6 +7,13 @@ namespace ClientManager.Infrastructure.Persistence.Extensions
 {
     public static class RepositoryClientExtensions
     {
+        private static readonly IReadOnlyCollection<string> AllowedSortFields = new[]
+        {
+            nameof(Client.Name),
+            nameof(Client.INN),
+            nameof(Client.ClientType)
+        };
+
         public static IQueryable<Client> Search(this IQueryable<Client> clients, string searchTerm)
         {
             if (string.IsNullOrWhiteSpace(searchTerm))
@@ -24,7 +31,7 @@ namespace ClientManager.Infrastructure.Persistence.Extensions
             if (string.IsNullOrWhiteSpace(orderByQueryString))
                 return clients.OrderBy(e => e.Name);
 
-            var orderQuery = OrderQueryBuilder.CreateOrderQuery<Client>(orderByQueryString);
+            var orderQuery = OrderQueryBuilder.CreateOrderQuery(orderByQueryString, AllowedSortFields);
 
             if (string.IsNullOrWhiteSpace(orderQuery))
                 return clients.OrderBy(e => e.Name);

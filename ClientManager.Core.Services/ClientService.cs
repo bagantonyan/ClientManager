@@ -217,7 +217,7 @@ namespace ClientManager.Core.Services
                 {
                     _logger.LogInformation($"Restoring soft-deleted founder. Id: {existing.Id}, INN: {existing.INN}.");
                     existing.DeletedDate = null;
-                    existing.FullName = dto.FullName;
+                    existing.FullName = dto.FullName!;
                 }
                 else
                 {
@@ -253,17 +253,18 @@ namespace ClientManager.Core.Services
 
                 _logger.LogInformation($"Restoring soft-deleted client. Id: {existing.Id}, INN: {existing.INN}.");
                 existing.DeletedDate = null;
-                existing.Name = dto.Name;
+                existing.Name = dto.Name!;
                 existing.ClientType = dto.ClientType;
                 clientEntity = existing;
             }
             else
             {
                 _logger.LogDebug($"Creating new client. INN: {dto.INN}.");
+                // Validators ensure INN/Name are non-null before reaching the service.
                 clientEntity = new Client
                 {
-                    INN = dto.INN,
-                    Name = dto.Name,
+                    INN = dto.INN!,
+                    Name = dto.Name!,
                     ClientType = dto.ClientType
                 };
                 _repository.Client.CreateClient(clientEntity);

@@ -44,7 +44,7 @@ namespace ClientManager.UnitTests.Services
         {
             var dto = ValidLegalEntityDto();
             _clientRepo.GetByInnIncludingDeletedAsync(dto.INN!, true, Arg.Any<CancellationToken>())
-                .Returns(new Client { INN = dto.INN, DeletedDate = null });
+                .Returns(new Client { INN = dto.INN!, Name = "X", DeletedDate = null });
 
             await FluentActions.Invoking(() => _sut.CreateClientAsync(dto))
                 .Should().ThrowAsync<ClientWithSameInnExistsException>();
@@ -57,7 +57,7 @@ namespace ClientManager.UnitTests.Services
             var existing = new Client
             {
                 Id = Guid.NewGuid(),
-                INN = dto.INN,
+                INN = dto.INN!,
                 Name = "Old name",
                 ClientType = ClientType.Legal_Entity,
                 DeletedDate = DateTime.UtcNow.AddDays(-3)
