@@ -46,6 +46,8 @@ namespace ClientManager
 
             builder.Services.ConfigureHealthChecks(builder.Configuration);
 
+            builder.Services.ConfigureOpenTelemetry(builder.Configuration, builder.Environment);
+
             builder.Services.AddControllers(config =>
             {
                 config.InputFormatters.Insert(0, GetJsonPatchInputFormatter());

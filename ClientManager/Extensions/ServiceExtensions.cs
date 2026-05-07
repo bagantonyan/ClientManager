@@ -8,6 +8,9 @@ using LoggingService;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
+using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
+using System.Reflection;
 using System.Threading.RateLimiting;
 
 namespace ClientManager.Extensions
@@ -143,6 +146,31 @@ namespace ClientManager.Extensions
             });
 
             app.MapHealthChecksUI();
+        }
+
+        public static void ConfigureOpenTelemetry(this IServiceCollection services, IConfiguration configuration, IHostEnvironment env)
+        {
+            var serviceName = Assembly.GetEntryAssembly()?.GetName().Name ?? "ClientManager";
+            var serviceVersion = Assembly.GetEntryAssembly()?.GetName().Version?.ToString() ?? "1.0.0";
+
+            services.AddOpenTelemetry()
+                .ConfigureResource(rb => rb.AddService(serviceName, serviceVersion: serviceVersion))
+                .WithTracing(tb =>
+                {
+                    tb.AddAspNetCoreInstrumentation(opt =>
+                      {
+                          opt.Filter = ctx => !ctx.Request.Path.StartsWithSegments("/health");
+                      })
+                      .AddHttpClientInstrumentation()
+                      .AddSqlClientInstrumentation();
+
+                    if (env.IsDevelopment())
+                        tb.AddConsoleExporter();
+
+                    var otlpEndpoint = configuration["OpenTelemetry:OtlpEndpoint"];
+                    if (!string.IsNullOrWhiteSpace(otlpEndpoint))
+                        tb.AddOtlpExporter(o => o.Endpoint = new Uri(otlpEndpoint));
+                });
         }
 
         public static WebApplication MigrateDatabase(this WebApplication app)
