@@ -1,93 +1,226 @@
 # ClientManager
 
-Web API на ASP.NET Core 9 для управления клиентами (юридическими лицами и индивидуальными предпринимателями) и их учредителями. Построен на слоистой Clean Architecture с EF Core и SQL Server, с soft-delete, оптимистичной блокировкой, distributed tracing и валидацией ИНН по алгоритму ФНС.
+ClientManager — это Web API на ASP.NET Core 9 для работы с клиентами: юридическими лицами, ИП и учредителями.
+
+Основной упор в проекте сделан на нормальную доменную модель, валидацию ИНН, soft-delete, конкурентное обновление через `ETag` / `If-Match` и предсказуемую обработку ошибок.
+
+Проект построен по Clean Architecture: внешние слои зависят от внутренних, а бизнес-логика не завязана напрямую на EF Core или ASP.NET Core.
 
 ---
 
-## Возможности
+## Что умеет проект
 
-### Доменная модель
-- Два типа клиента: `Legal_Entity` (ИНН 10 цифр) и `Individual_Entrepreneur` (ИНН 12 цифр).
-- Учредители — физические лица (ИНН 12 цифр), могут быть связаны с несколькими юр. лицами.
-- Связь many-to-many `Client ↔ Founder` через join-сущность `ClientFounder`.
-- Валидация контрольных цифр ИНН по алгоритму ФНС.
-- Доменные инварианты обеспечены и в коде, и на уровне БД:
-  - Длина ИНН соответствует типу клиента (CHECK constraint).
-  - ИНН состоит только из цифр (CHECK constraint).
-  - Учредители разрешены только клиентам типа `Legal_Entity` (CHECK на shadow-FK столбце).
-  - У юр. лица всегда есть ≥1 учредитель (валидируется при создании и при удалении последнего).
+### Клиенты и учредители
 
-### Слой персистентности
-- EF Core 9 + SQL Server.
-- **Soft-delete** для `Client` и `Founder` (поле `DeletedDate` + глобальный query filter), проставляется автоматически через audit-хук в `ChangeTracker`.
-- **Hard-delete** для связей `ClientFounder` — сама связь не имеет жизненного цикла с аудитом.
-- **Filtered unique indexes** на `INN` (`WHERE DeletedDate IS NULL`) — мягко удалённая запись сохраняет свой ИНН, но не блокирует создание новой с тем же значением.
-- **Restore-by-INN** при создании: если присылают клиента/учредителя с ИНН, который уже есть в БД soft-deleted'ом, запись восстанавливается вместо ошибки уникальности.
-- **Оптимистичная блокировка** через `RowVersion` (тип SQL Server `rowversion`) + HTTP-заголовки `If-Match` / `ETag`.
-- Audit-метки (`CreatedDate` / `ModifiedDate` / `DeletedDate`) проставляются через `TimeProvider` (тестируемо, единое значение времени на весь `SaveChanges`).
+В системе есть два типа клиентов:
 
-### API
-- REST-эндпоинты с версионированием (заголовок `api-version`).
-- Pagination, поиск и сортировка по whitelist'у полей на `GET /api/clients`.
-- JSON Patch (`application/json-patch+json`) на `PATCH`-эндпоинтах с подробным репортом ошибок через `ModelState`.
-- Bulk-создание (`POST /api/clients/collection`) — атомарное, всё-или-ничего.
-- Кастомный `ArrayModelBinder` для GET'а коллекции по ID'ам.
-- Ответы об ошибках в формате ProblemDetails (RFC 7807) с extension'ом `correlationId`.
-- ETag на GET/POST/PATCH — клиенты могут использовать `If-Match` чтобы избежать lost-update гонок.
+- `Legal_Entity` — юридическое лицо, ИНН из 10 цифр;
+- `Individual_Entrepreneur` — ИП, ИНН из 12 цифр.
 
-### Cross-cutting
-- **FluentValidation** на всех входных DTO, включая рекурсивный `RuleForEach` по коллекции `Founders`.
-- **AutoMapper** (16.x) — единый профиль.
-- **Serilog** (Console / File / [Seq](https://datalust.co/seq)) с обогащением через `LogContext`.
-- **Correlation ID middleware** — читает или генерирует заголовок `X-Correlation-Id` и пушит его в Serilog-контекст.
-- **OpenTelemetry** — distributed tracing для ASP.NET Core, HttpClient и SQL Client; экспортёры: Console (dev) и OTLP (prod).
-- Trace ID (`Activity.TraceId`) попадают в каждую log-строку через `Serilog.Enrichers.Span`.
-- **Rate limiting** (глобальный window + per-endpoint policy через `[EnableRateLimiting]`).
-- **Health checks** (`/health` + Health Checks UI).
-- **Глобальный exception handler** маппит доменные исключения на HTTP-статусы:
-  - `NotFoundException` → 404
-  - `BadRequestException` → 400
-  - `ConflictException` / `DbUpdateConcurrencyException` → 409
-  - всё остальное → 500
-- В логах: `Warning` для 4xx, `Error` для 5xx — никаких ложных алертов на штатные 404.
+Учредители — это физические лица с ИНН из 12 цифр. Один учредитель может быть привязан к нескольким юридическим лицам, поэтому связь сделана как many-to-many через `ClientFounder`.
 
-### Качество
-- Юнит-тесты на xUnit + FluentAssertions + NSubstitute, покрывающие алгоритм валидации ИНН, валидаторы DTO (матрица типа клиента × наличие учредителей × длина ИНН) и бизнес-правила сервисного слоя (restore, конфликт, каскадное удаление, защита последнего учредителя).
+Для ИНН проверяется не только длина и формат, но и контрольные цифры по алгоритму ФНС.
+
+Часть правил продублирована на уровне БД через CHECK constraints:
+
+- длина ИНН должна соответствовать типу клиента;
+- ИНН должен состоять только из цифр;
+- учредители разрешены только для `Legal_Entity`;
+- у юридического лица должен быть минимум один учредитель.
+
+Последнее правило дополнительно проверяется в сервисах, потому что полностью выразить его обычным CHECK constraint неудобно.
 
 ---
 
-## Стек технологий
+## Архитектура
 
-| Назначение | Библиотека |
+Зависимости идут внутрь:
+
+```text
+Presentation  ->  Services  ->  Domain
+Persistence   ->  Domain
+```
+
+Основная идея такая:
+
+- `Domain` содержит сущности, правила и интерфейсы репозиториев;
+- `Services` содержит бизнес-сценарии;
+- `Persistence` реализует доступ к данным через EF Core;
+- `Presentation` отвечает за HTTP API, DTO, валидацию входных данных и ответы клиенту.
+
+Сервисы работают через интерфейсы из доменного слоя и не зависят напрямую от `DbContext`.
+
+---
+
+## Работа с данными
+
+Для хранения используется EF Core 9 + SQL Server.
+
+Что реализовано в persistence-слое:
+
+- soft-delete для `Client` и `Founder` через поле `DeletedDate`;
+- глобальные query filters, чтобы soft-deleted записи не попадали в обычные запросы;
+- автоматическое заполнение `CreatedDate`, `ModifiedDate`, `DeletedDate` через audit-хук в `ChangeTracker`;
+- hard-delete для `ClientFounder`, потому что сама связь не имеет отдельного жизненного цикла;
+- filtered unique indexes по `INN` с условием `WHERE DeletedDate IS NULL`;
+- восстановление записи по ИНН, если найден soft-deleted клиент или учредитель;
+- optimistic concurrency через SQL Server `rowversion`.
+
+Для времени используется `TimeProvider`, чтобы время в тестах можно было контролировать и чтобы в одном `SaveChanges` использовалось одно значение.
+
+---
+
+## API
+
+API сделан в REST-стиле и поддерживает версионирование через заголовок `api-version`.
+
+Основные возможности:
+
+- постраничный список клиентов;
+- поиск и сортировка по разрешённым полям;
+- получение коллекции клиентов по списку ID;
+- создание одного клиента или пачки клиентов;
+- атомарный bulk-create: если один элемент невалидный, вся операция откатывается;
+- JSON Patch для частичного обновления;
+- `ETag` в ответах на GET / POST / PATCH;
+- `If-Match` на PATCH, чтобы не перезаписывать чужие изменения;
+- единый формат ошибок через ProblemDetails;
+- `correlationId` в ошибках и логах.
+
+### Эндпоинты
+
+| Метод | Путь | Что делает |
+|---|---|---|
+| GET | `/api/clients` | Список клиентов с pagination / search / sort |
+| GET | `/api/clients/{id}` | Один клиент по ID |
+| GET | `/api/clients/collection/(id1,id2,...)` | Несколько клиентов по ID |
+| POST | `/api/clients` | Создать клиента или восстановить soft-deleted запись по ИНН |
+| POST | `/api/clients/collection` | Создать несколько клиентов атомарно |
+| PATCH | `/api/clients/{id}` | Частично обновить клиента через JSON Patch |
+| DELETE | `/api/clients/{id}` | Soft-delete клиента |
+| GET | `/api/clients/{clientId}/founders` | Список учредителей клиента |
+| GET | `/api/clients/{clientId}/founders/{id}` | Один учредитель |
+| POST | `/api/clients/{clientId}/founders` | Добавить, переиспользовать или восстановить учредителя |
+| PATCH | `/api/clients/{clientId}/founders/{id}` | Частично обновить учредителя |
+| DELETE | `/api/clients/{clientId}/founders/{id}` | Отвязать учредителя от клиента |
+| GET | `/health` | Проверка доступности приложения и SQL Server |
+| GET | `/swagger` | Swagger UI в Development |
+
+---
+
+## Доменные правила
+
+Ключевые правила, которые проверяются в проекте:
+
+- юридическое лицо нельзя создать без учредителей;
+- у юридического лица нельзя удалить последнего учредителя;
+- ИП не может иметь учредителей;
+- учредитель может быть связан с несколькими юридическими лицами;
+- если учредитель после удаления связи больше нигде не используется, он soft-delete'ится;
+- если клиент или учредитель с таким ИНН уже есть среди активных записей, возвращается ошибка;
+- если запись с таким ИНН была soft-deleted, она восстанавливается и используется повторно.
+
+---
+
+## Валидация ИНН
+
+Валидация вынесена в `InnValidator`.
+
+Для юридического лица проверяется 10-значный ИНН:
+
+```text
+(2, 4, 10, 3, 5, 9, 4, 6, 8) · digits[0..8] mod 11 mod 10 == digits[9]
+```
+
+Для физического лица / ИП проверяется 12-значный ИНН:
+
+```text
+11-я цифра:
+(7, 2, 4, 10, 3, 5, 9, 4, 6, 8) · digits[0..9] mod 11 mod 10
+
+12-я цифра:
+(3, 7, 2, 4, 10, 3, 5, 9, 4, 6, 8) · digits[0..10] mod 11 mod 10
+```
+
+Форматные проверки также зафиксированы на уровне базы, чтобы невалидные данные нельзя было обойти через persistence-слой.
+
+---
+
+## Ошибки и concurrency
+
+Ошибки возвращаются в формате ProblemDetails.
+
+Маппинг основных исключений:
+
+| Исключение | HTTP status |
+|---|---|
+| `NotFoundException` | 404 |
+| `BadRequestException` | 400 |
+| `ConflictException` | 409 |
+| `DbUpdateConcurrencyException` | 409 |
+| остальные ошибки | 500 |
+
+Для конкурентного обновления используется `RowVersion`.
+
+Сценарий такой:
+
+1. Клиент делает `GET` и получает `ETag`.
+2. При `PATCH` отправляет этот `ETag` в `If-Match`.
+3. Если запись уже изменилась, API возвращает конфликт вместо тихой перезаписи данных.
+
+---
+
+## Логирование, tracing и health checks
+
+В проекте подключены:
+
+- Serilog с выводом в Console, File и Seq;
+- correlation id через заголовок `X-Correlation-Id`;
+- OpenTelemetry для ASP.NET Core, HttpClient и SQL Client;
+- OTLP exporter для production-сценариев;
+- Console exporter для разработки;
+- health checks для приложения и SQL Server;
+- Health Checks UI.
+
+Если клиент передаёт `X-Correlation-Id`, API использует его. Если нет — генерирует новый. Этот ID попадает в логи и в ProblemDetails.
+
+---
+
+## Стек
+
+| Задача | Используется |
 |---|---|
 | Платформа | .NET 9 / ASP.NET Core 9 |
-| ORM | EF Core 9 (SQL Server provider) |
+| ORM | EF Core 9 + SQL Server |
 | Маппинг | AutoMapper 16 |
 | Валидация | FluentValidation 11 |
-| Patch | `Microsoft.AspNetCore.JsonPatch` + форматтер `NewtonsoftJson` |
-| Логирование | Serilog (sinks `Console`, `File`, `Seq`) + `Serilog.Enrichers.Span` |
-| Трейсинг | OpenTelemetry (инструментации `AspNetCore`, `HttpClient`, `SqlClient`; экспортёры OTLP + Console) |
-| Версионирование API | `Asp.Versioning.Mvc` |
+| JSON Patch | `Microsoft.AspNetCore.JsonPatch` + `NewtonsoftJson` formatter |
+| Логи | Serilog, Console/File/Seq sinks, `Serilog.Enrichers.Span` |
+| Tracing | OpenTelemetry: AspNetCore, HttpClient, SqlClient |
+| API versioning | `Asp.Versioning.Mvc` |
 | Rate limiting | `Microsoft.AspNetCore.RateLimiting` |
-| Health checks | `AspNetCore.HealthChecks.SqlServer` + `HealthChecks.UI` |
-| Документация API | `Swashbuckle.AspNetCore` (Swagger / OpenAPI) |
+| Health checks | `AspNetCore.HealthChecks.SqlServer`, `HealthChecks.UI` |
+| Swagger | `Swashbuckle.AspNetCore` |
 | Тесты | xUnit, FluentAssertions, NSubstitute |
 
 ---
 
-Граф зависимостей идёт от внешних слоёв (Presentation, Persistence) внутрь к Domain. Сервисы зависят от интерфейсов в `Core.Domain.Repositories`, никогда — от `Persistence`. Presentation зависит от `Core.Services.Abstractions`.
-
----
-
-## Запуск проекта
+## Запуск
 
 ### Требования
 
-- [.NET SDK 9.0](https://dotnet.microsoft.com/download)
-- SQL Server (для разработки достаточно LocalDB; дефолтная строка подключения — `(localdb)\MSSQLLocalDB`)
-- Опционально: [Seq](https://datalust.co/seq) — для агрегации логов, [Jaeger](https://www.jaegertracing.io/) — для просмотра трейсов
+- .NET SDK 9.0
+- SQL Server
+- LocalDB подойдёт для локальной разработки
+- Seq и Jaeger опциональны
 
-### Локально
+По умолчанию используется LocalDB:
+
+```text
+(localdb)\MSSQLLocalDB
+```
+
+### Сборка
 
 ```bash
 git clone https://github.com/<your-account>/ClientManager.git
@@ -96,21 +229,27 @@ cd ClientManager
 dotnet build
 ```
 
-В `Development` миграции применяются автоматически при старте. Чтобы запустить вручную:
+В `Development` миграции применяются автоматически при старте приложения.
+
+Если нужно применить их вручную:
 
 ```bash
 dotnet ef database update -p ClientManager.Infrastructure.Persistence -s ClientManager
 ```
 
-Запуск API:
+### Запуск API
 
 ```bash
 dotnet run --project ClientManager
 ```
 
-Swagger UI: `https://localhost:<port>/swagger`.
+Swagger будет доступен по адресу:
 
-### Запуск тестов
+```text
+https://localhost:<port>/swagger
+```
+
+### Тесты
 
 ```bash
 dotnet test
@@ -120,75 +259,33 @@ dotnet test
 
 ## Конфигурация
 
-Ключи `appsettings.json`:
+Основные ключи в `appsettings.json`:
 
-| Ключ | Назначение |
+| Ключ | Для чего нужен |
 |---|---|
-| `ConnectionStrings:sqlConnection` | Строка подключения к SQL Server |
-| `Cors:AllowedOrigins` | Production-whitelist для CORS (массив URL'ов). В `Development` разрешены любые origin'ы |
-| `Serilog` | Конфиг Serilog — sinks, минимальный уровень, шаблон вывода |
-| `OpenTelemetry:OtlpEndpoint` | Опциональный OTLP/gRPC-endpoint (например `http://localhost:4317`). Если задан — трейсы отправляются туда дополнительно к консоли |
-| `HealthChecksUI` | Конфиг UI-дашборда для health-checks |
+| `ConnectionStrings:sqlConnection` | Подключение к SQL Server |
+| `Cors:AllowedOrigins` | Список разрешённых origin'ов для production |
+| `Serilog` | Настройки логирования |
+| `OpenTelemetry:OtlpEndpoint` | OTLP/gRPC endpoint, например `http://localhost:4317` |
+| `HealthChecksUI` | Настройки UI для health checks |
 
-Локальный Jaeger:
+В `Development` CORS настроен свободнее, чтобы не мешать локальной разработке.
+
+### Локальный Jaeger
 
 ```bash
 docker run -d --name jaeger -p 4317:4317 -p 16686:16686 jaegertracing/all-in-one:latest
 ```
----
 
-## Обзор API
-
-| Метод | Путь | Описание |
-|---|---|---|
-| GET | `/api/clients` | Постраничный список (поиск / сортировка / фильтр через query-параметры) |
-| GET | `/api/clients/{id}` | Один клиент (возвращает `ETag`) |
-| GET | `/api/clients/collection/(id1,id2,…)` | Получить пачку клиентов по ID'ам |
-| POST | `/api/clients` | Создать клиента. Если ИНН совпадает с soft-deleted — запись восстанавливается |
-| POST | `/api/clients/collection` | Создать пачкой (атомарно) |
-| PATCH | `/api/clients/{id}` | JSON Patch. Принимает `If-Match`, возвращает новый `ETag` |
-| DELETE | `/api/clients/{id}` | Soft-delete. Каскадно мягко удаляет осиротевших учредителей |
-| GET | `/api/clients/{clientId}/founders` | Список учредителей клиента |
-| GET | `/api/clients/{clientId}/founders/{id}` | Один учредитель (возвращает `ETag`) |
-| POST | `/api/clients/{clientId}/founders` | Добавить (или восстановить / переиспользовать) учредителя |
-| PATCH | `/api/clients/{clientId}/founders/{id}` | JSON Patch. Принимает `If-Match`, возвращает новый `ETag` |
-| DELETE | `/api/clients/{clientId}/founders/{id}` | Отвязать. Если у учредителя не остаётся активных связей — он soft-delete'ится |
-| GET | `/health` | Health-check (доступность SQL) |
-| GET | `/swagger` | Документация API (только в Development) |
-
-### Correlation
-
-В каждом ответе есть заголовок `X-Correlation-Id`. Клиент может прислать свой — иначе сервер сгенерирует новый. Этот же ID пушится в `LogContext` Serilog, поэтому каждая лог-строка в рамках запроса несёт его. В ProblemDetails-ответах ID также доступен под extension'ом `correlationId`.
-
----
-
-## Доменные правила
-
-- **Юр. лицо** всегда имеет ≥ 1 учредителя. Создать ЮЛ без учредителей нельзя. Удалить последнего учредителя нельзя (блокируется 400-кой).
-- **ИП** не может иметь учредителей. Попытка добавить → 400.
-- Учредитель, привязанный к нескольким клиентам, не удаляется при soft-delete одного из них — soft-delete'ятся только осиротевшие (без активных связей).
-- Создание клиента/учредителя с уже существующим ИНН:
-  - Активная запись с тем же ИНН → 400 (`ClientWithSameInnExistsException` / `FounderAlreadyLinkedToClientException`).
-  - Мягко удалённая запись с тем же ИНН → восстанавливается, потом привязывается.
-
-### Валидация ИНН
-
-Реализована в `InnValidator` по алгоритму ФНС:
-
-- **10 цифр (юр. лицо):** `(2,4,10,3,5,9,4,6,8) · digits[0..8] mod 11 mod 10 == digits[9]`
-- **12 цифр (физ. лицо / ИП):**
-  - 11-я цифра: `(7,2,4,10,3,5,9,4,6,8) · digits[0..9] mod 11 mod 10`
-  - 12-я цифра: `(3,7,2,4,10,3,5,9,4,6,8) · digits[0..10] mod 11 mod 10`
-
-Проверки формата (длина, только цифры) дополнительно зафиксированы как CHECK-констрейнты в БД; алгоритмическая проверка контрольных цифр выполняется на уровне приложения.
+После запуска UI будет доступен на порту `16686`.
 
 ---
 
 ## Тестирование
 
-Tier-1 unit-тесты покрывают самое ценное и часто изменяемое поведение:
+Основной упор в тестах сделан на правила, которые проще всего сломать при изменениях:
 
-- `InnValidatorTests` — алгоритм валидации для обеих длин ИНН.
-- `ClientForCreationDtoValidatorTests` — матрица `ClientType × Founders × длина ИНН`.
-- `ClientServiceTests` — restore-by-INN, каскадный soft-delete, конфликт по дублю.
-- `FounderServiceTests` — restore + reuse, конфликт связи, защита последнего учредителя.
+- `InnValidatorTests` — проверка алгоритма ИНН для 10 и 12 цифр;
+- `ClientForCreationDtoValidatorTests` — комбинации типа клиента, ИНН и учредителей;
+- `ClientServiceTests` — восстановление по ИНН, soft-delete, конфликты;
+- `FounderServiceTests` — восстановление, повторное использование, конфликт связи, защита последнего учредителя.
