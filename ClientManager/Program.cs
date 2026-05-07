@@ -96,7 +96,7 @@ namespace ClientManager
 
             app.UseCors("CorsPolicy");
 
-            app.UseAuthorization();
+            app.MigrateDatabase();
 
             app.MapControllers();
 

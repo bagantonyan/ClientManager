@@ -127,5 +127,18 @@ namespace ClientManager.Extensions
 
             app.MapHealthChecksUI();
         }
+
+        public static WebApplication MigrateDatabase(this WebApplication app)
+        {
+            using (var scope = app.Services.CreateScope())
+            {
+                using (var dbContext = scope.ServiceProvider.GetRequiredService<RepositoryContext>())
+                {
+                    dbContext.Database.Migrate();
+                }
+            }
+
+            return app;
+        }
     }
 }
