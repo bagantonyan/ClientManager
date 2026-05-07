@@ -18,6 +18,9 @@ namespace ClientManager.Infrastructure.Persistence.Configurations
 
             builder.Property(p => p.DeletedDate)
                 .IsRequired(false);
+
+            builder.Property(p => p.RowVersion)
+                .IsRowVersion();
         }
     }
 }
