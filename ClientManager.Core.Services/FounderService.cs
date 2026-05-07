@@ -14,6 +14,7 @@ namespace ClientManager.Core.Services
         private readonly IRepositoryManager _repository;
         private readonly ILoggerManager _logger;
         private readonly IMapper _mapper;
+
         public FounderService(
             IRepositoryManager repository, 
             ILoggerManager logger,

@@ -60,92 +60,6 @@ namespace ClientManager.Core.Services
             return clientToReturn;
         }
 
-        private async Task<Client> ResolveOrCreateClientAsync(
-            ClientForCreationDto dto,
-            Dictionary<string, Founder> founderCache,
-            CancellationToken ct)
-        {
-            var existing = await _repository.Client.GetByInnIncludingDeletedAsync(dto.INN!, trackChanges: true, ct);
-
-            Client clientEntity;
-            if (existing is not null)
-            {
-                if (existing.DeletedDate is null)
-                {
-                    _logger.LogWarning($"Attempt to create client with already-active INN {dto.INN}.");
-                    throw new ClientWithSameInnExistsException(dto.INN!);
-                }
-
-                _logger.LogInformation($"Restoring soft-deleted client. Id: {existing.Id}, INN: {existing.INN}.");
-                existing.DeletedDate = null;
-                existing.Name = dto.Name;
-                existing.ClientType = dto.ClientType;
-                clientEntity = existing;
-            }
-            else
-            {
-                _logger.LogDebug($"Creating new client. INN: {dto.INN}.");
-                clientEntity = new Client
-                {
-                    INN = dto.INN,
-                    Name = dto.Name,
-                    ClientType = dto.ClientType
-                };
-                _repository.Client.CreateClient(clientEntity);
-            }
-
-            if (dto.Founders is not null && dto.Founders.Any())
-            {
-                var resolved = new List<ClientFounder>();
-                foreach (var founderDto in dto.Founders)
-                {
-                    var founder = await ResolveFounderAsync(founderDto, founderCache, ct);
-                    resolved.Add(new ClientFounder { Founder = founder });
-                }
-                clientEntity.ClientFounders = resolved;
-            }
-
-            return clientEntity;
-        }
-
-        private async Task<Founder> ResolveFounderAsync(
-            FounderForCreationDto dto,
-            Dictionary<string, Founder> cache,
-            CancellationToken ct)
-        {
-            if (cache.TryGetValue(dto.INN!, out var cached))
-            {
-                _logger.LogDebug($"Founder INN {dto.INN} resolved from in-request cache.");
-                return cached;
-            }
-
-            var existing = await _repository.Founder.GetByInnIncludingDeletedAsync(dto.INN!, trackChanges: true, ct);
-
-            Founder result;
-            if (existing is not null)
-            {
-                if (existing.DeletedDate is not null)
-                {
-                    _logger.LogInformation($"Restoring soft-deleted founder. Id: {existing.Id}, INN: {existing.INN}.");
-                    existing.DeletedDate = null;
-                    existing.FullName = dto.FullName;
-                }
-                else
-                {
-                    _logger.LogDebug($"Reusing existing active founder. Id: {existing.Id}, INN: {existing.INN}.");
-                }
-                result = existing;
-            }
-            else
-            {
-                _logger.LogDebug($"Creating new founder. INN: {dto.INN}.");
-                result = _mapper.Map<Founder>(dto);
-            }
-
-            cache[dto.INN!] = result;
-            return result;
-        }
-
         public async Task<IEnumerable<ClientDto>> GetByIdsAsync(IEnumerable<Guid> ids, bool trackChanges, bool includeFounders, CancellationToken ct = default)
         {
             if (ids is null)
@@ -278,6 +192,92 @@ namespace ClientManager.Core.Services
             {
                 _logger.LogWarning($"Client {clientId} not found in the database.");
                 throw new ClientNotFoundException(clientId);
+            }
+
+            return clientEntity;
+        }
+
+        private async Task<Founder> ResolveFounderAsync(
+            FounderForCreationDto dto,
+            Dictionary<string, Founder> cache,
+            CancellationToken ct)
+        {
+            if (cache.TryGetValue(dto.INN!, out var cached))
+            {
+                _logger.LogDebug($"Founder INN {dto.INN} resolved from in-request cache.");
+                return cached;
+            }
+
+            var existing = await _repository.Founder.GetByInnIncludingDeletedAsync(dto.INN!, trackChanges: true, ct);
+
+            Founder result;
+            if (existing is not null)
+            {
+                if (existing.DeletedDate is not null)
+                {
+                    _logger.LogInformation($"Restoring soft-deleted founder. Id: {existing.Id}, INN: {existing.INN}.");
+                    existing.DeletedDate = null;
+                    existing.FullName = dto.FullName;
+                }
+                else
+                {
+                    _logger.LogDebug($"Reusing existing active founder. Id: {existing.Id}, INN: {existing.INN}.");
+                }
+                result = existing;
+            }
+            else
+            {
+                _logger.LogDebug($"Creating new founder. INN: {dto.INN}.");
+                result = _mapper.Map<Founder>(dto);
+            }
+
+            cache[dto.INN!] = result;
+            return result;
+        }
+
+        private async Task<Client> ResolveOrCreateClientAsync(
+            ClientForCreationDto dto,
+            Dictionary<string, Founder> founderCache,
+            CancellationToken ct)
+        {
+            var existing = await _repository.Client.GetByInnIncludingDeletedAsync(dto.INN!, trackChanges: true, ct);
+
+            Client clientEntity;
+            if (existing is not null)
+            {
+                if (existing.DeletedDate is null)
+                {
+                    _logger.LogWarning($"Attempt to create client with already-active INN {dto.INN}.");
+                    throw new ClientWithSameInnExistsException(dto.INN!);
+                }
+
+                _logger.LogInformation($"Restoring soft-deleted client. Id: {existing.Id}, INN: {existing.INN}.");
+                existing.DeletedDate = null;
+                existing.Name = dto.Name;
+                existing.ClientType = dto.ClientType;
+                clientEntity = existing;
+            }
+            else
+            {
+                _logger.LogDebug($"Creating new client. INN: {dto.INN}.");
+                clientEntity = new Client
+                {
+                    INN = dto.INN,
+                    Name = dto.Name,
+                    ClientType = dto.ClientType
+                };
+                _repository.Client.CreateClient(clientEntity);
+            }
+
+            if (dto.Founders is not null && dto.Founders.Any())
+            {
+                var resolved = new List<ClientFounder>();
+                foreach (var founderDto in dto.Founders)
+                {
+                    var founder = await ResolveFounderAsync(founderDto, founderCache, ct);
+                    resolved.Add(new ClientFounder { Founder = founder });
+                }
+                clientEntity.ClientFounders = resolved;
             }
 
             return clientEntity;

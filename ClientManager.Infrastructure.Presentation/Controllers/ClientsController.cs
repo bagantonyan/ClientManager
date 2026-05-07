@@ -74,6 +74,9 @@ namespace ClientManager.Infrastructure.Presentation.Controllers
         /// <summary>
         /// Create new client
         /// </summary>
+        /// <param name="client">The client to create</param>
+        /// <param name="validator">Validator (resolved from DI)</param>
+        /// <param name="ct">Cancellation token</param>
         /// <returns>A newly created client</returns>
         [HttpPost(Name = "CreateClient")]
         [ProducesResponseType(StatusCodes.Status201Created)]

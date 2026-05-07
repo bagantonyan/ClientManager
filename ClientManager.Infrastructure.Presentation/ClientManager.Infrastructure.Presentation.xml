@@ -26,6 +26,9 @@
             <summary>
             Create new client
             </summary>
+            <param name="client">The client to create</param>
+            <param name="validator">Validator (resolved from DI)</param>
+            <param name="ct">Cancellation token</param>
             <returns>A newly created client</returns>
         </member>
         <member name="M:ClientManager.Infrastructure.Presentation.Controllers.ClientsController.GetClientCollection(System.Collections.Generic.IEnumerable{System.Guid},System.Threading.CancellationToken,System.Boolean)">

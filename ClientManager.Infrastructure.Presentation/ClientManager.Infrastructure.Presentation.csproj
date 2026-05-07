@@ -22,6 +22,10 @@
 	  <ProjectReference Include="..\LoggingService\LoggingService.csproj" />
 	</ItemGroup>
 
+	<ItemGroup>
+	  <InternalsVisibleTo Include="ClientManager.UnitTests" />
+	</ItemGroup>
+
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
 		<DocumentationFile>ClientManager.Infrastructure.Presentation.xml</DocumentationFile>
 		<OutputPath></OutputPath>
