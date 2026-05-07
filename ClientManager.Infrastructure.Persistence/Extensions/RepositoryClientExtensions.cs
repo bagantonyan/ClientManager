@@ -1,5 +1,6 @@
 ﻿using ClientManager.Core.Domain.Entities;
 using ClientManager.Infrastructure.Persistence.Extensions.Utility;
+using Microsoft.EntityFrameworkCore;
 using System.Linq.Dynamic.Core;
 
 namespace ClientManager.Infrastructure.Persistence.Extensions
@@ -11,9 +12,11 @@ namespace ClientManager.Infrastructure.Persistence.Extensions
             if (string.IsNullOrWhiteSpace(searchTerm))
                 return clients;
 
-            var lowerCaseTerm = searchTerm.Trim().ToLower();
+            var pattern = $"%{searchTerm.Trim()}%";
 
-            return clients.Where(e => e.Name.ToLower().Contains(lowerCaseTerm) || e.INN.Contains(lowerCaseTerm));
+            return clients.Where(e =>
+                (e.Name != null && EF.Functions.Like(e.Name, pattern)) ||
+                (e.INN != null && EF.Functions.Like(e.INN, pattern)));
         }
 
         public static IQueryable<Client> Sort(this IQueryable<Client> clients, string orderByQueryString)

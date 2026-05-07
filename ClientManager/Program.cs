@@ -16,7 +16,7 @@ namespace ClientManager
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            builder.Services.ConfigureCors();
+            builder.Services.ConfigureCors(builder.Configuration, builder.Environment);
 
             builder.Services.ConfigureLoggerService();
 
@@ -96,7 +96,8 @@ namespace ClientManager
 
             app.UseCors("CorsPolicy");
 
-            app.MigrateDatabase();
+            if (app.Environment.IsDevelopment())
+                app.MigrateDatabase();
 
             app.MapControllers();
 

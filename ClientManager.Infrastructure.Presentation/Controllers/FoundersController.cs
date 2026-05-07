@@ -1,4 +1,5 @@
-﻿using ClientManager.Core.Services.Abstractions;
+﻿using Asp.Versioning;
+using ClientManager.Core.Services.Abstractions;
 using ClientManager.Infrastructure.Presentation.Validators;
 using FluentValidation;
 using LoggingService;
@@ -9,6 +10,7 @@ using Shared.DataTransferObjects.Founders;
 
 namespace ClientManager.Infrastructure.Presentation.Controllers
 {
+    [ApiVersion("1.0")]
     [Route("api/clients/{clientId}/founders")]
     [ApiController]
     [ApiExplorerSettings(GroupName = "v1")]
@@ -155,7 +157,7 @@ namespace ClientManager.Infrastructure.Presentation.Controllers
                 return UnprocessableEntity(valResult.ToDictionary());
             }
 
-            await _service.FounderService.SaveChangesForPatchAsync(result.founderToPatch, result.founderEntity);
+            await _service.FounderService.SaveChangesForPatchAsync(result.founderToPatch, result.founderEntity, ct);
 
             return NoContent();
         }

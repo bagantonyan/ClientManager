@@ -3,7 +3,6 @@ using ClientManager.Core.Domain.Repositories;
 using ClientManager.Infrastructure.Persistence.Extensions;
 using Microsoft.EntityFrameworkCore;
 using Shared.RequestFeatures;
-using System.ComponentModel.Design;
 
 namespace ClientManager.Infrastructure.Persistence.Repositories
 {
@@ -16,22 +15,21 @@ namespace ClientManager.Infrastructure.Persistence.Repositories
 
         public async Task<PagedList<Client>> GetAllClientsAsync(ClientParameters clientParameters, bool trackChanges, bool includeFounders, CancellationToken ct = default)
         {
-            var query = FindAll(trackChanges);
+            var filtered = FindAll(trackChanges).Search(clientParameters.SearchTerm!);
 
+            var count = await filtered.CountAsync(ct);
+
+            var pageQuery = filtered;
             if (includeFounders)
-                query = query
+                pageQuery = pageQuery
                     .Include(c => c.ClientFounders!)
                         .ThenInclude(cf => cf.Founder);
 
-            var clients = await query
-                .Search(clientParameters.SearchTerm!)
+            var clients = await pageQuery
                 .Sort(clientParameters.OrderBy!)
                 .Skip((clientParameters.PageNumber - 1) * clientParameters.PageSize)
                 .Take(clientParameters.PageSize)
                 .ToListAsync(ct);
-
-            var count = await FindAll(trackChanges)
-                .CountAsync(ct);
 
             return PagedList<Client>
                 .ToPagedList(clients, count, clientParameters.PageNumber, clientParameters.PageSize);

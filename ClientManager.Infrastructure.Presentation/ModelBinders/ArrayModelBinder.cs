@@ -27,15 +27,26 @@ namespace ClientManager.Infrastructure.Presentation.ModelBinders
             var genericType = bindingContext.ModelType.GetTypeInfo().GenericTypeArguments[0];
             var converter = TypeDescriptor.GetConverter(genericType);
 
-            var objectArray = providedValue.Split(new[] { "," }, StringSplitOptions.RemoveEmptyEntries)
-                .Select(x => converter.ConvertFromString(x.Trim()))
-                .ToArray();
+            try
+            {
+                var objectArray = providedValue.Split(new[] { "," }, StringSplitOptions.RemoveEmptyEntries)
+                    .Select(x => converter.ConvertFromString(x.Trim()))
+                    .ToArray();
 
-            var guidArray = Array.CreateInstance(genericType, objectArray.Length);
-            objectArray.CopyTo(guidArray, 0);
-            bindingContext.Model = guidArray;
+                var typedArray = Array.CreateInstance(genericType, objectArray.Length);
+                objectArray.CopyTo(typedArray, 0);
+                bindingContext.Model = typedArray;
 
-            bindingContext.Result = ModelBindingResult.Success(bindingContext.Model);
+                bindingContext.Result = ModelBindingResult.Success(bindingContext.Model);
+            }
+            catch (Exception)
+            {
+                bindingContext.ModelState.TryAddModelError(
+                    bindingContext.ModelName,
+                    $"The value '{providedValue}' could not be parsed as a collection of {genericType.Name}.");
+                bindingContext.Result = ModelBindingResult.Failed();
+            }
+
             return Task.CompletedTask;
         }
     }

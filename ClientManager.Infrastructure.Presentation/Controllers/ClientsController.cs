@@ -1,4 +1,5 @@
-﻿using ClientManager.Core.Services.Abstractions;
+﻿using Asp.Versioning;
+using ClientManager.Core.Services.Abstractions;
 using ClientManager.Infrastructure.Presentation.ModelBinders;
 using ClientManager.Infrastructure.Presentation.Validators;
 using FluentValidation;
@@ -13,6 +14,7 @@ using System.Text.Json;
 
 namespace ClientManager.Infrastructure.Presentation.Controllers
 {
+    [ApiVersion("1.0")]
     [Route("api/[controller]")]
     [ApiController]
     [ApiExplorerSettings(GroupName = "v1")]

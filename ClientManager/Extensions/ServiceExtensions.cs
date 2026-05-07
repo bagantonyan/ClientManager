@@ -14,14 +14,28 @@ namespace ClientManager.Extensions
 {
     public static class ServiceExtensions
     {
-        public static void ConfigureCors(this IServiceCollection services) =>
+        public static void ConfigureCors(this IServiceCollection services, IConfiguration configuration, IHostEnvironment env) =>
             services.AddCors(options =>
             {
                 options.AddPolicy("CorsPolicy", builder =>
-                    builder.AllowAnyOrigin()
-                           .AllowAnyMethod()
-                           .AllowAnyHeader()
-                           .WithExposedHeaders("X-Pagination"));
+                {
+                    if (env.IsDevelopment())
+                    {
+                        builder.AllowAnyOrigin()
+                               .AllowAnyMethod()
+                               .AllowAnyHeader()
+                               .WithExposedHeaders("X-Pagination");
+                    }
+                    else
+                    {
+                        var origins = configuration.GetSection("Cors:AllowedOrigins").Get<string[]>()
+                                      ?? Array.Empty<string>();
+                        builder.WithOrigins(origins)
+                               .AllowAnyMethod()
+                               .AllowAnyHeader()
+                               .WithExposedHeaders("X-Pagination");
+                    }
+                });
             });
 
         public static void ConfigureLoggerService(this IServiceCollection services) =>
