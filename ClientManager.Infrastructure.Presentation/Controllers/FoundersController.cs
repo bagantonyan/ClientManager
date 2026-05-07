@@ -1,5 +1,6 @@
 ﻿using Asp.Versioning;
 using ClientManager.Core.Services.Abstractions;
+using ClientManager.Infrastructure.Presentation.Http;
 using ClientManager.Infrastructure.Presentation.Validators;
 using FluentValidation;
 using LoggingService;
@@ -55,6 +56,9 @@ namespace ClientManager.Infrastructure.Presentation.Controllers
         {
             var founder = await _service.FounderService.GetFounderAsync(clientId, id, trackChanges: false, ct);
 
+            if (founder.RowVersion is not null)
+                Response.Headers.ETag = ETagHelper.ToETag(founder.RowVersion);
+
             return Ok(founder);
         }
 
@@ -93,6 +97,9 @@ namespace ClientManager.Infrastructure.Presentation.Controllers
 
             var founderToReturn = await _service.FounderService.CreateFounderForClientAsync(clientId, founder, trackChanges: true, ct);
 
+            if (founderToReturn.RowVersion is not null)
+                Response.Headers.ETag = ETagHelper.ToETag(founderToReturn.RowVersion);
+
             return CreatedAtRoute("GetFounderForClient", new { clientId, id = founderToReturn.Id }, founderToReturn);
         }
 
@@ -120,17 +127,20 @@ namespace ClientManager.Infrastructure.Presentation.Controllers
         /// <param name="clientId">Client id</param>
         /// <param name="id">Founder id</param>
         /// <param name="patchDoc">JSON Patch document (RFC 6902)</param>
+        /// <param name="ifMatch">Optional ETag from a previous GET. If provided and stale, 409 Conflict is returned.</param>
         /// <param name="validator">Validator (resolved from DI)</param>
         /// <param name="ct">Cancellation token</param>
         [HttpPatch("{id:guid}")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status409Conflict)]
         [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
         public async Task<IActionResult> PartiallyUpdateFounderForClient(
             Guid clientId,
             Guid id,
             [FromBody] JsonPatchDocument<FounderForUpdateDto> patchDoc,
+            [FromHeader(Name = "If-Match")] string? ifMatch,
             [FromServices] IValidator<FounderForUpdateDto> validator,
             CancellationToken ct)
         {
@@ -157,7 +167,11 @@ namespace ClientManager.Infrastructure.Presentation.Controllers
                 return UnprocessableEntity(valResult.ToDictionary());
             }
 
-            await _service.FounderService.SaveChangesForPatchAsync(result.founderToPatch, result.founderEntity, ct);
+            var ifMatchBytes = ETagHelper.TryParseIfMatch(ifMatch);
+
+            await _service.FounderService.SaveChangesForPatchAsync(result.founderToPatch, result.founderEntity, ifMatchBytes, ct);
+
+            Response.Headers.ETag = ETagHelper.ToETag(result.founderEntity.RowVersion);
 
             return NoContent();
         }

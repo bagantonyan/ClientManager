@@ -1,4 +1,5 @@
-﻿using ClientManager.Core.Domain.Repositories;
+﻿using ClientManager.Core.Domain.Entities;
+using ClientManager.Core.Domain.Repositories;
 using ClientManager.Infrastructure.Persistence.Repositories;
 
 namespace ClientManager.Infrastructure.Persistence
@@ -17,5 +18,8 @@ namespace ClientManager.Infrastructure.Persistence
         public IClientRepository Client => _clientRepository.Value;
         public IFounderRepository Founder => _founderRepository.Value;
         public Task SaveAsync(CancellationToken ct = default) => _repositoryContext.SaveChangesAsync(ct);
+
+        public void SetOriginalRowVersion<T>(T entity, byte[] rowVersion) where T : BaseEntity =>
+            _repositoryContext.Entry(entity).Property(e => e.RowVersion).OriginalValue = rowVersion;
     }
 }

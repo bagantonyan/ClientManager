@@ -142,9 +142,12 @@ namespace ClientManager.Core.Services
             return (founderToPatch, founderEntity);
         }
 
-        public async Task SaveChangesForPatchAsync(FounderForUpdateDto founderToPatch, Founder founderEntity, CancellationToken ct = default)
+        public async Task SaveChangesForPatchAsync(FounderForUpdateDto founderToPatch, Founder founderEntity, byte[]? ifMatch, CancellationToken ct = default)
         {
             _mapper.Map(founderToPatch, founderEntity);
+
+            if (ifMatch is not null)
+                _repository.SetOriginalRowVersion(founderEntity, ifMatch);
 
             await _repository.SaveAsync(ct);
 

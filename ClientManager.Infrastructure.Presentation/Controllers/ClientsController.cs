@@ -1,5 +1,6 @@
 ﻿using Asp.Versioning;
 using ClientManager.Core.Services.Abstractions;
+using ClientManager.Infrastructure.Presentation.Http;
 using ClientManager.Infrastructure.Presentation.ModelBinders;
 using ClientManager.Infrastructure.Presentation.Validators;
 using FluentValidation;
@@ -70,6 +71,9 @@ namespace ClientManager.Infrastructure.Presentation.Controllers
         {
             var client = await _service.ClientService.GetClientAsync(id, trackChanges: false, includeFounders, ct);
 
+            if (client.RowVersion is not null)
+                Response.Headers.ETag = ETagHelper.ToETag(client.RowVersion);
+
             return Ok(client);
         }
 
@@ -103,6 +107,9 @@ namespace ClientManager.Infrastructure.Presentation.Controllers
             }
 
             var createdClient = await _service.ClientService.CreateClientAsync(client, ct);
+
+            if (createdClient.RowVersion is not null)
+                Response.Headers.ETag = ETagHelper.ToETag(createdClient.RowVersion);
 
             return CreatedAtRoute("ClientById", new { id = createdClient.Id }, createdClient);
         }
@@ -184,16 +191,19 @@ namespace ClientManager.Infrastructure.Presentation.Controllers
         /// </summary>
         /// <param name="id">Client id</param>
         /// <param name="patchDoc">JSON Patch document (RFC 6902)</param>
+        /// <param name="ifMatch">Optional ETag from a previous GET. If provided and stale, 409 Conflict is returned.</param>
         /// <param name="validator">Validator (resolved from DI)</param>
         /// <param name="ct">Cancellation token</param>
         [HttpPatch("{id:guid}")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status409Conflict)]
         [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
         public async Task<IActionResult> PartiallyUpdateClient(
             Guid id,
             [FromBody] JsonPatchDocument<ClientForUpdateDto> patchDoc,
+            [FromHeader(Name = "If-Match")] string? ifMatch,
             [FromServices] IValidator<ClientForUpdateDto> validator,
             CancellationToken ct)
         {
@@ -220,7 +230,11 @@ namespace ClientManager.Infrastructure.Presentation.Controllers
                 return UnprocessableEntity(valResult.ToDictionary());
             }
 
-            await _service.ClientService.SaveChangesForPatchAsync(result.clientToPatch, result.clientEntity, ct);
+            var ifMatchBytes = ETagHelper.TryParseIfMatch(ifMatch);
+
+            await _service.ClientService.SaveChangesForPatchAsync(result.clientToPatch, result.clientEntity, ifMatchBytes, ct);
+
+            Response.Headers.ETag = ETagHelper.ToETag(result.clientEntity.RowVersion);
 
             return NoContent();
         }

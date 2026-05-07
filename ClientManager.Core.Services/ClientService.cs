@@ -158,9 +158,12 @@ namespace ClientManager.Core.Services
             return (clientToPatch, clientEntity);
         }
 
-        public async Task SaveChangesForPatchAsync(ClientForUpdateDto clientToPatch, Client clientEntity, CancellationToken ct = default)
+        public async Task SaveChangesForPatchAsync(ClientForUpdateDto clientToPatch, Client clientEntity, byte[]? ifMatch, CancellationToken ct = default)
         {
             _mapper.Map(clientToPatch, clientEntity);
+
+            if (ifMatch is not null)
+                _repository.SetOriginalRowVersion(clientEntity, ifMatch);
 
             await _repository.SaveAsync(ct);
 

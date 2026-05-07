@@ -1,5 +1,6 @@
 ﻿using Shared.DataTransferObjects.Founders;
 using Shared.Enums;
+using System.Text.Json.Serialization;
 
 namespace Shared.DataTransferObjects.Clients
 {
@@ -10,5 +11,8 @@ namespace Shared.DataTransferObjects.Clients
         public string? Name { get; init; }
         public ClientType ClientType { get; init; }
         public IEnumerable<FounderDto>? Founders { get; init; }
+
+        [JsonIgnore]
+        public byte[]? RowVersion { get; init; }
     }
 }
