@@ -1,4 +1,5 @@
 ﻿using ClientManager.Core.Domain.Exceptions;
+using ClientManager.Middleware;
 using LoggingService;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
@@ -39,6 +40,10 @@ namespace ClientManager
             else
                 _logger.LogWarning(logMessage);
 
+            var correlationId = httpContext.Response.Headers.TryGetValue(CorrelationIdMiddleware.HeaderName, out var v)
+                ? v.ToString()
+                : null;
+
             var result = await _problemDetailsService.TryWriteAsync(new ProblemDetailsContext
             {
                 HttpContext = httpContext,
@@ -47,7 +52,11 @@ namespace ClientManager
                     Title = title,
                     Status = statusCode,
                     Detail = exception.Message,
-                    Type = exception.GetType().Name
+                    Type = exception.GetType().Name,
+                    Extensions =
+                    {
+                        ["correlationId"] = correlationId
+                    }
                 },
                 Exception = exception
             });
@@ -58,7 +67,11 @@ namespace ClientManager
                     Title = title,
                     Status = statusCode,
                     Detail = exception.Message,
-                    Type = exception.GetType().Name
+                    Type = exception.GetType().Name,
+                    Extensions =
+                    {
+                        ["correlationId"] = correlationId
+                    }
                 });
 
             return true;

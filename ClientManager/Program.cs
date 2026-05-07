@@ -1,6 +1,7 @@
 using ClientManager.Core.Services;
 using ClientManager.Extensions;
 using ClientManager.Infrastructure.Presentation.Validators.Clients;
+using ClientManager.Middleware;
 using FluentValidation;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Mvc;
@@ -67,6 +68,8 @@ namespace ClientManager
                 Log.Information("Application is stopping..."));
             app.Lifetime.ApplicationStopped.Register(() =>
                 Log.Information("Application stopped."));
+
+            app.UseMiddleware<CorrelationIdMiddleware>();
 
             app.UseSerilogRequestLogging();
 
