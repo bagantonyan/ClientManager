@@ -1,10 +1,12 @@
 ﻿using ClientManager.Core.Domain.Entities;
 using ClientManager.Infrastructure.Persistence.Extensions;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 
 namespace ClientManager.Infrastructure.Persistence
 {
-    public class RepositoryContext : DbContext
+    public class RepositoryContext : IdentityDbContext<User>
     {
         private readonly TimeProvider _timeProvider;
 
@@ -20,7 +22,16 @@ namespace ClientManager.Infrastructure.Persistence
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            base.OnModelCreating(modelBuilder);
+
             modelBuilder.ApplyConfigurationsFromAssembly(typeof(RepositoryContext).Assembly);
+        }
+
+        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+        {
+            base.OnConfiguring(optionsBuilder);
+
+            optionsBuilder.ConfigureWarnings(w => w.Ignore(RelationalEventId.PendingModelChangesWarning));
         }
 
         public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)

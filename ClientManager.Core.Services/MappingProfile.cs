@@ -2,6 +2,7 @@
 using ClientManager.Core.Domain.Entities;
 using Shared.DataTransferObjects.Clients;
 using Shared.DataTransferObjects.Founders;
+using Shared.DataTransferObjects.Users;
 
 namespace ClientManager.Core.Services
 {
@@ -27,6 +28,8 @@ namespace ClientManager.Core.Services
             CreateMap<FounderForUpdateDto, Founder>(MemberList.Source).ReverseMap();
 
             CreateMap<ClientForUpdateDto, Client>(MemberList.Source).ReverseMap();
+
+            CreateMap<UserForRegistrationDto, User>();
         }
     }
 }

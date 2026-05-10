@@ -4,5 +4,6 @@
     {
         IClientService ClientService { get; }
         IFounderService FounderService { get; }
+        IAuthenticationService AuthenticationService { get; }
     }
 }

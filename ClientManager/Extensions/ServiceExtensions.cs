@@ -1,4 +1,5 @@
 ﻿using Asp.Versioning;
+using ClientManager.Core.Domain.Entities;
 using ClientManager.Core.Domain.Repositories;
 using ClientManager.Core.Services;
 using ClientManager.Core.Services.Abstractions;
@@ -6,6 +7,7 @@ using ClientManager.Infrastructure.Persistence;
 using HealthChecks.UI.Client;
 using LoggingService;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using OpenTelemetry.Resources;
@@ -184,6 +186,21 @@ namespace ClientManager.Extensions
             }
 
             return app;
+        }
+
+        public static void ConfigureIdentity(this IServiceCollection services)
+        {
+            var builder = services.AddIdentity<User, IdentityRole>(o =>
+            {
+                o.Password.RequireDigit = true;
+                o.Password.RequireLowercase = false;
+                o.Password.RequireUppercase = false;
+                o.Password.RequireNonAlphanumeric = false;
+                o.Password.RequiredLength = 10;
+                o.User.RequireUniqueEmail = true;
+            })
+            .AddEntityFrameworkStores<RepositoryContext>()
+            .AddDefaultTokenProviders();
         }
     }
 }
