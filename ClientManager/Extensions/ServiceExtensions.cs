@@ -209,7 +209,13 @@ namespace ClientManager.Extensions
         public static void ConfigureJWT(this IServiceCollection services, IConfiguration configuration)
         {
             var jwtSettings = configuration.GetSection("JwtSettings");
-            var secretKey = Environment.GetEnvironmentVariable("SECRET");
+
+            var secretKey = jwtSettings["Secret"]
+                ?? throw new InvalidOperationException(
+                    "JwtSettings:Secret is not configured. " +
+                    "Set it locally with: dotnet user-secrets set \"JwtSettings:Secret\" \"<your-key>\" --project ClientManager. " +
+                    "In production set the environment variable JwtSettings__Secret.");
+
             services.AddAuthentication(opt =>
             {
                 opt.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
