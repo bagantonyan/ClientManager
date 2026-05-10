@@ -1,12 +1,16 @@
 using FluentValidation;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Options;
 using Shared.DataTransferObjects.Users;
 
 namespace ClientManager.Infrastructure.Presentation.Validators.Users
 {
     public class UserForRegistrationDtoValidator : AbstractValidator<UserForRegistrationDto>
     {
-        public UserForRegistrationDtoValidator()
+        public UserForRegistrationDtoValidator(IOptions<IdentityOptions> identityOptions)
         {
+            var pwd = identityOptions.Value.Password;
+
             RuleFor(x => x.UserName)
                 .Cascade(CascadeMode.Stop)
                 .NotEmpty().WithMessage("UserName is required.")
@@ -17,12 +21,21 @@ namespace ClientManager.Infrastructure.Presentation.Validators.Users
             RuleFor(x => x.Password)
                 .Cascade(CascadeMode.Stop)
                 .NotEmpty().WithMessage("Password is required.")
-                .MinimumLength(8).WithMessage("Password must be at least 8 characters.")
+                .MinimumLength(pwd.RequiredLength)
+                    .WithMessage($"Password must be at least {pwd.RequiredLength} characters.")
                 .MaximumLength(100).WithMessage("Password must not exceed 100 characters.")
-                .Matches(@"[A-Z]").WithMessage("Password must contain at least one uppercase letter.")
-                .Matches(@"[a-z]").WithMessage("Password must contain at least one lowercase letter.")
+                .Matches("[A-Z]").WithMessage("Password must contain at least one uppercase letter.")
+                    .When(_ => pwd.RequireUppercase)
+                .Matches("[a-z]").WithMessage("Password must contain at least one lowercase letter.")
+                    .When(_ => pwd.RequireLowercase)
                 .Matches(@"\d").WithMessage("Password must contain at least one digit.")
-                .Matches(@"[^a-zA-Z0-9]").WithMessage("Password must contain at least one non-alphanumeric character.");
+                    .When(_ => pwd.RequireDigit)
+                .Matches(@"[^a-zA-Z0-9]")
+                    .WithMessage("Password must contain at least one non-alphanumeric character.")
+                    .When(_ => pwd.RequireNonAlphanumeric)
+                .Must(p => p!.Distinct().Count() >= pwd.RequiredUniqueChars)
+                    .WithMessage($"Password must contain at least {pwd.RequiredUniqueChars} unique character(s).")
+                    .When(_ => pwd.RequiredUniqueChars > 1);
 
             RuleFor(x => x.Email)
                 .Cascade(CascadeMode.Stop)
