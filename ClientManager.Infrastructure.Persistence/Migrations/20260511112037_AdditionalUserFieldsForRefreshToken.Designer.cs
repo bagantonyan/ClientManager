@@ -4,6 +4,7 @@ using ClientManager.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ClientManager.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(RepositoryContext))]
-    partial class RepositoryContextModelSnapshot : ModelSnapshot
+    [Migration("20260511112037_AdditionalUserFieldsForRefreshToken")]
+    partial class AdditionalUserFieldsForRefreshToken
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -240,13 +243,13 @@ namespace ClientManager.Infrastructure.Persistence.Migrations
                     b.HasData(
                         new
                         {
-                            Id = "db546dde-caa3-47a6-a102-7a92b30f54e4",
+                            Id = "fd2f742e-db0b-4b4f-ba58-4cd8989ffc8d",
                             Name = "Manager",
                             NormalizedName = "MANAGER"
                         },
                         new
                         {
-                            Id = "562db648-a900-490e-b1b4-1061312b3584",
+                            Id = "6d4682f2-0d66-4e24-bf1a-942f78866338",
                             Name = "Administrator",
                             NormalizedName = "ADMINISTRATOR"
                         });
