@@ -95,16 +95,19 @@ namespace ClientManager.Core.Services
 
         private SigningCredentials GetSigningCredentials()
         {
+            var secret = new SymmetricSecurityKey(GetJwtKey());
+
+            return new SigningCredentials(secret, SecurityAlgorithms.HmacSha256);
+        }
+
+        private byte[] GetJwtKey()
+        {
             var secretValue = _configuration["JwtSettings:Secret"]
                 ?? throw new InvalidOperationException(
                     "JWT secret is missing. Set it with `dotnet user-secrets set \"JwtSettings:Secret\" \"<value>\" --project ClientManager` " +
                     "or via the JwtSettings__Secret environment variable.");
 
-            var key = Encoding.UTF8.GetBytes(secretValue);
-
-            var secret = new SymmetricSecurityKey(key);
-
-            return new SigningCredentials(secret, SecurityAlgorithms.HmacSha256);
+            return Encoding.UTF8.GetBytes(secretValue);
         }
 
         private async Task<List<Claim>> GetClaims()
@@ -156,17 +159,12 @@ namespace ClientManager.Core.Services
         {
             var jwtSettings = _configuration.GetSection("JwtSettings");
 
-            var secretValue = _configuration["JwtSettings:Secret"]
-                ?? throw new InvalidOperationException(
-                    "JWT secret is missing. Set it with `dotnet user-secrets set \"JwtSettings:Secret\" \"<value>\" --project ClientManager` " +
-                    "or via the JwtSettings__Secret environment variable.");
-
             var tokenValidationParameters = new TokenValidationParameters
             {
                 ValidateAudience = true,
                 ValidateIssuer = true,
                 ValidateIssuerSigningKey = true,
-                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretValue)),
+                IssuerSigningKey = new SymmetricSecurityKey(GetJwtKey()),
                 ValidateLifetime = false,
                 ValidIssuer = jwtSettings["validIssuer"],
                 ValidAudience = jwtSettings["validAudience"]
