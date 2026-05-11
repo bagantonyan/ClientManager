@@ -34,6 +34,7 @@ namespace ClientManager.Infrastructure.Presentation.Controllers
             }
 
             var valResult = validator.Validate(userForRegistration);
+
             if (!valResult.IsValid)
             {
                 _logger.LogWarning($"RegisterUser validation failed: {valResult.FormatErrors()}");
@@ -41,15 +42,46 @@ namespace ClientManager.Infrastructure.Presentation.Controllers
             }
 
             var result = await _service.AuthenticationService.RegisterUser(userForRegistration);
+
             if (!result.Succeeded)
             {
                 foreach (var error in result.Errors)
                 {
                     ModelState.TryAddModelError(error.Code, error.Description);
                 }
+
                 return BadRequest(ModelState);
             }
+
             return StatusCode(201);
+        }
+
+        [HttpPost("login")]
+        public async Task<IActionResult> Authenticate(
+            [FromBody] UserForAuthenticationDto user,
+            [FromServices] IValidator<UserForAuthenticationDto> validator)
+        {
+            if (user is null)
+            {
+                _logger.LogWarning("Authenticate: request body is null.");
+                return BadRequest("UserForAuthenticationDto object is null");
+            }
+
+            var valResult = validator.Validate(user);
+
+            if (!valResult.IsValid)
+            {
+                _logger.LogWarning($"RegisterUser validation failed: {valResult.FormatErrors()}");
+                return UnprocessableEntity(valResult.ToDictionary());
+            }
+
+            if (!await _service.AuthenticationService.ValidateUser(user))
+                return Unauthorized();
+
+            return Ok(new
+            {
+                Token = await _service.AuthenticationService.CreateToken()
+            });
         }
     }
 }
