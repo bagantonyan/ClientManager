@@ -1,4 +1,5 @@
 ﻿using Asp.Versioning;
+using ClientManager.Core.Domain.ConfigurationModels;
 using ClientManager.Core.Domain.Entities;
 using ClientManager.Core.Domain.Repositories;
 using ClientManager.Core.Services;
@@ -210,6 +211,9 @@ namespace ClientManager.Extensions
         {
             var jwtSettings = configuration.GetSection("JwtSettings");
 
+            var jwtConfiguration = new JwtConfiguration();
+            configuration.Bind(jwtConfiguration.Section, jwtConfiguration);
+
             var secretKey = jwtSettings["Secret"]
                 ?? throw new InvalidOperationException(
                     "JwtSettings:Secret is not configured. " +
@@ -229,11 +233,14 @@ namespace ClientManager.Extensions
                     ValidateAudience = true,
                     ValidateLifetime = true,
                     ValidateIssuerSigningKey = true,
-                    ValidIssuer = jwtSettings["validIssuer"],
-                    ValidAudience = jwtSettings["validAudience"],
+                    ValidIssuer = jwtConfiguration.ValidIssuer,
+                    ValidAudience = jwtConfiguration.ValidAudience,
                     IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey))
                 };
             });
         }
+
+        public static void AddJwtConfiguration(this IServiceCollection services, IConfiguration configuration) => services
+            .Configure<JwtConfiguration>(configuration.GetSection("JwtSettings"));
     }
 }

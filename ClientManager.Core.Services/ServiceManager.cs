@@ -1,10 +1,11 @@
 ﻿using AutoMapper;
+using ClientManager.Core.Domain.ConfigurationModels;
 using ClientManager.Core.Domain.Entities;
 using ClientManager.Core.Domain.Repositories;
 using ClientManager.Core.Services.Abstractions;
 using LoggingService;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
 
 namespace ClientManager.Core.Services
 {
@@ -17,7 +18,8 @@ namespace ClientManager.Core.Services
             IRepositoryManager repositoryManager, 
             ILoggerManager logger, 
             IMapper mapper,
-            UserManager<User> userManager, IConfiguration configuration)
+            UserManager<User> userManager, 
+            IOptions<JwtConfiguration> configuration)
         {
             _clientService = new Lazy<IClientService>(() => new ClientService(repositoryManager, logger, mapper));
             _founderService = new Lazy<IFounderService>(() => new FounderService(repositoryManager, logger, mapper));

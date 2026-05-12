@@ -50,6 +50,8 @@ namespace ClientManager
 
             builder.Services.ConfigureJWT(builder.Configuration);
 
+            builder.Services.AddJwtConfiguration(builder.Configuration);
+
             builder.Services.ConfigureHealthChecks(builder.Configuration);
 
             builder.Services.ConfigureOpenTelemetry(builder.Configuration, builder.Environment);
