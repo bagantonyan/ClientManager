@@ -3,9 +3,12 @@ using ClientManager.Core.Domain.Repositories;
 using ClientManager.Core.Services;
 using ClientManager.Core.Services.Abstractions;
 using ClientManager.Infrastructure.Persistence;
+using ClientManager.Middleware;
 using HealthChecks.UI.Client;
 using LoggingService;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using OpenTelemetry.Resources;
@@ -96,38 +99,81 @@ namespace ClientManager.Extensions
             services.AddRateLimiter(opt =>
             {
                 opt.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
-                    RateLimitPartition.GetFixedWindowLimiter("GlobalLimiter",
-                    partition => new FixedWindowRateLimiterOptions
-                    {
-                        AutoReplenishment = true,
-                        PermitLimit = 50,
-                        QueueLimit = 2,
-                        QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
-                        Window = TimeSpan.FromMinutes(1)
-                    }));
+                    RateLimitPartition.GetSlidingWindowLimiter(
+                        GetClientIp(context),
+                        _ => new SlidingWindowRateLimiterOptions
+                        {
+                            AutoReplenishment = true,
+                            PermitLimit = 5,
+                            QueueLimit = 2,
+                            QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                            Window = TimeSpan.FromMinutes(1),
+                            SegmentsPerWindow = 6
+                        }));
 
                 opt.AddPolicy("SpecificPolicy", context =>
-                    RateLimitPartition.GetFixedWindowLimiter("SpecificLimiter",
-                    partition => new FixedWindowRateLimiterOptions
-                    {
-                        AutoReplenishment = true,
-                        PermitLimit = 10,
-                        Window = TimeSpan.FromSeconds(10)
-                    }));
+                    RateLimitPartition.GetSlidingWindowLimiter(
+                        GetClientIp(context),
+                        _ => new SlidingWindowRateLimiterOptions
+                        {
+                            AutoReplenishment = true,
+                            PermitLimit = 10,
+                            Window = TimeSpan.FromSeconds(10),
+                            SegmentsPerWindow = 5
+                        }));
 
                 opt.OnRejected = async (context, token) =>
                 {
-                    context.HttpContext.Response.StatusCode = StatusCodes.Status429TooManyRequests;
-                    if (context.Lease.TryGetMetadata(MetadataName.RetryAfter, out var retryAfter))
-                        await context.HttpContext.Response
-                            .WriteAsync($"Too many requests. " +
-                            $"Please try again after {retryAfter.TotalSeconds} second(s).", token);
-                    else
-                        await context.HttpContext.Response
-                            .WriteAsync("Too many requests. Please try again later.", token);
+                    var http = context.HttpContext;
+                    http.Response.StatusCode = StatusCodes.Status429TooManyRequests;
+
+                    int? retryAfterSeconds = context.Lease.TryGetMetadata(MetadataName.RetryAfter, out var retryAfter)
+                        ? (int)Math.Ceiling(retryAfter.TotalSeconds)
+                        : null;
+
+                    if (retryAfterSeconds is int seconds)
+                        http.Response.Headers.RetryAfter = seconds.ToString();
+
+                    var clientIp = GetClientIp(http);
+                    var policyName = http.GetEndpoint()?.Metadata
+                        .GetMetadata<EnableRateLimitingAttribute>()?.PolicyName ?? "Global";
+
+                    var loggerFactory = http.RequestServices.GetRequiredService<ILoggerFactory>();
+                    var logger = loggerFactory.CreateLogger("RateLimiter");
+
+                    logger.LogWarning(
+                        "Rate limit rejected. ClientIp={ClientIp} Policy={Policy} Method={Method} Path={Path} RetryAfterSec={RetryAfterSec}",
+                        clientIp, policyName, http.Request.Method, http.Request.Path.Value, retryAfterSeconds);
+
+                    var correlationId = http.Response.Headers
+                        .TryGetValue(CorrelationIdMiddleware.HeaderName, out var v) ? v.ToString() : null;
+
+                    var problem = new ProblemDetails
+                    {
+                        Title = "Too many requests",
+                        Status = StatusCodes.Status429TooManyRequests,
+                        Detail = retryAfterSeconds is int s
+                            ? $"Rate limit exceeded. Try again in {s} second(s)."
+                            : "Rate limit exceeded. Try again later.",
+                        Type = "RateLimitExceeded",
+                        Extensions = { ["correlationId"] = correlationId }
+                    };
+
+                    var problemService = http.RequestServices.GetRequiredService<IProblemDetailsService>();
+                    var written = await problemService.TryWriteAsync(new ProblemDetailsContext
+                    {
+                        HttpContext = http,
+                        ProblemDetails = problem
+                    });
+
+                    if (!written)
+                        await http.Response.WriteAsJsonAsync(problem, token);
                 };
             });
         }
+
+        private static string GetClientIp(HttpContext context) =>
+            context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
 
         public static void ConfigureHealthChecks(this IServiceCollection services, IConfiguration configuration)
         {
