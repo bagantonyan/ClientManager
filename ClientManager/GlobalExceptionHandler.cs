@@ -3,7 +3,6 @@ using ClientManager.Middleware;
 using LoggingService;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace ClientManager
 {
@@ -29,7 +28,7 @@ namespace ClientManager
             {
                 NotFoundException => (StatusCodes.Status404NotFound, "Resource not found"),
                 BadRequestException => (StatusCodes.Status400BadRequest, "Bad request"),
-                ConflictException or DbUpdateConcurrencyException => (StatusCodes.Status409Conflict, "Concurrent modification"),
+                ConflictException => (StatusCodes.Status409Conflict, "Concurrent modification"),
                 _ => (StatusCodes.Status500InternalServerError, "An unexpected error occurred")
             };
 

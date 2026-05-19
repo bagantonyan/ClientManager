@@ -1,4 +1,5 @@
 ﻿using ClientManager.Core.Domain.Entities;
+using ClientManager.Core.Domain.Exceptions;
 using ClientManager.Infrastructure.Persistence.Extensions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
@@ -33,11 +34,18 @@ namespace ClientManager.Infrastructure.Persistence
             optionsBuilder.ConfigureWarnings(w => w.Ignore(RelationalEventId.PendingModelChangesWarning));
         }
 
-        public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+        public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         {
             ChangeTracker.SetAuditProperties(_timeProvider);
 
-            return base.SaveChangesAsync(cancellationToken);
+            try
+            {
+                return await base.SaveChangesAsync(cancellationToken);
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                throw new ConcurrencyConflictException();
+            }
         }
     }
 }
