@@ -79,6 +79,13 @@ namespace ClientManager
             app.Lifetime.ApplicationStopped.Register(() =>
                 Log.Information("Application stopped."));
 
+            app.UseForwardedHeaders(new ForwardedHeadersOptions
+            {
+                ForwardedHeaders = ForwardedHeaders.All
+            });
+
+            app.UseHttpsRedirection();
+
             app.UseMiddleware<CorrelationIdMiddleware>();
 
             app.UseSerilogRequestLogging();
@@ -96,16 +103,9 @@ namespace ClientManager
 
             app.UseExceptionHandler(opt => { });
 
-            app.UseHttpsRedirection();
-
             app.ConfigureHealthChecksEndpoints();
 
             app.UseStaticFiles();
-
-            app.UseForwardedHeaders(new ForwardedHeadersOptions
-            {
-                ForwardedHeaders = ForwardedHeaders.All
-            });
 
             app.UseRateLimiter();
 
