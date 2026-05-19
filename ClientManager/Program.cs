@@ -95,13 +95,13 @@ namespace ClientManager
 
             app.UseExceptionHandler(opt => { });
 
+            app.UseCors("CorsPolicy");
+
             app.ConfigureHealthChecksEndpoints();
 
             app.UseStaticFiles();
 
             app.UseRateLimiter();
-
-            app.UseCors("CorsPolicy");
 
             if (app.Environment.IsDevelopment())
                 app.MigrateDatabase();

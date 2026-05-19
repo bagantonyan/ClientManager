@@ -25,21 +25,29 @@ namespace ClientManager.Extensions
             {
                 options.AddPolicy("CorsPolicy", builder =>
                 {
+                    string[] exposedHeaders =
+                    {
+                        "X-Pagination",
+                        "ETag",
+                        "X-Correlation-Id",
+                        "Retry-After"
+                    };
+
                     if (env.IsDevelopment())
                     {
                         builder.AllowAnyOrigin()
                                .AllowAnyMethod()
                                .AllowAnyHeader()
-                               .WithExposedHeaders("X-Pagination");
+                               .WithExposedHeaders(exposedHeaders);
                     }
                     else
                     {
                         var origins = configuration.GetSection("Cors:AllowedOrigins").Get<string[]>()
                                       ?? Array.Empty<string>();
                         builder.WithOrigins(origins)
-                               .AllowAnyMethod()
-                               .AllowAnyHeader()
-                               .WithExposedHeaders("X-Pagination");
+                               .WithMethods("GET", "POST", "PATCH", "DELETE", "OPTIONS")
+                               .WithHeaders("Authorization", "Content-Type", "If-Match", "X-Correlation-Id")
+                               .WithExposedHeaders(exposedHeaders);
                     }
                 });
             });
