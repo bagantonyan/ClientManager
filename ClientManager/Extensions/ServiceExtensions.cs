@@ -1,22 +1,16 @@
 ﻿using Asp.Versioning;
-using ClientManager.Core.Domain.ConfigurationModels;
-using ClientManager.Core.Domain.Entities;
 using ClientManager.Core.Domain.Repositories;
 using ClientManager.Core.Services;
 using ClientManager.Core.Services.Abstractions;
 using ClientManager.Infrastructure.Persistence;
 using HealthChecks.UI.Client;
 using LoggingService;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using System.Reflection;
-using System.Text;
 using System.Threading.RateLimiting;
 
 namespace ClientManager.Extensions
@@ -83,31 +77,6 @@ namespace ClientManager.Extensions
                 .Assembly.GetName().Name}.xml";
                 var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
                 s.IncludeXmlComments(xmlPath);
-
-                s.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
-                {
-                    In = ParameterLocation.Header,
-                    Description = "Paste your JWT access token below — the 'Bearer ' prefix is added automatically.",
-                    Name = "Authorization",
-                    Type = SecuritySchemeType.Http,
-                    Scheme = "Bearer",
-                    BearerFormat = "JWT"
-                });
-
-                s.AddSecurityRequirement(new OpenApiSecurityRequirement
-                {
-                    {
-                        new OpenApiSecurityScheme
-                        {
-                            Reference = new OpenApiReference
-                            {
-                                Type = ReferenceType.SecurityScheme,
-                                Id = "Bearer"
-                            }
-                        },
-                        Array.Empty<string>()
-                    }
-                });
             });
         }
 
@@ -217,55 +186,5 @@ namespace ClientManager.Extensions
             return app;
         }
 
-        public static void ConfigureIdentity(this IServiceCollection services)
-        {
-            var builder = services.AddIdentity<User, IdentityRole>(o =>
-            {
-                o.Password.RequireDigit = true;
-                o.Password.RequireLowercase = false;
-                o.Password.RequireUppercase = false;
-                o.Password.RequireNonAlphanumeric = false;
-                o.Password.RequiredLength = 10;
-                o.User.RequireUniqueEmail = true;
-            })
-            .AddEntityFrameworkStores<RepositoryContext>()
-            .AddDefaultTokenProviders();
-        }
-
-        public static void ConfigureJWT(this IServiceCollection services, IConfiguration configuration)
-        {
-            var jwtSettings = configuration.GetSection("JwtSettings");
-
-            var jwtConfiguration = new JwtConfiguration();
-            configuration.Bind(jwtConfiguration.Section, jwtConfiguration);
-
-            var secretKey = jwtSettings["Secret"]
-                ?? throw new InvalidOperationException(
-                    "JwtSettings:Secret is not configured. " +
-                    "Set it locally with: dotnet user-secrets set \"JwtSettings:Secret\" \"<your-key>\" --project ClientManager. " +
-                    "In production set the environment variable JwtSettings__Secret.");
-
-            services.AddAuthentication(opt =>
-            {
-                opt.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-                opt.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-            })
-            .AddJwtBearer(options =>
-            {
-                options.TokenValidationParameters = new TokenValidationParameters
-                {
-                    ValidateIssuer = true,
-                    ValidateAudience = true,
-                    ValidateLifetime = true,
-                    ValidateIssuerSigningKey = true,
-                    ValidIssuer = jwtConfiguration.ValidIssuer,
-                    ValidAudience = jwtConfiguration.ValidAudience,
-                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey))
-                };
-            });
-        }
-
-        public static void AddJwtConfiguration(this IServiceCollection services, IConfiguration configuration) => services
-            .Configure<JwtConfiguration>(configuration.GetSection("JwtSettings"));
     }
 }

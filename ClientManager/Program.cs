@@ -44,14 +44,6 @@ namespace ClientManager
 
             builder.Services.ConfigureRateLimitingOptions();
 
-            builder.Services.AddAuthentication();
-
-            builder.Services.ConfigureIdentity();
-
-            builder.Services.ConfigureJWT(builder.Configuration);
-
-            builder.Services.AddJwtConfiguration(builder.Configuration);
-
             builder.Services.ConfigureHealthChecks(builder.Configuration);
 
             builder.Services.ConfigureOpenTelemetry(builder.Configuration, builder.Environment);
@@ -110,10 +102,6 @@ namespace ClientManager
             app.UseRateLimiter();
 
             app.UseCors("CorsPolicy");
-
-            app.UseAuthentication();
-
-            app.UseAuthorization();
 
             if (app.Environment.IsDevelopment())
                 app.MigrateDatabase();

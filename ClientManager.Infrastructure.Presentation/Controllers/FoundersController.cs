@@ -4,7 +4,6 @@ using ClientManager.Infrastructure.Presentation.Http;
 using ClientManager.Infrastructure.Presentation.Validators;
 using FluentValidation;
 using LoggingService;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
@@ -12,7 +11,6 @@ using Shared.DataTransferObjects.Founders;
 
 namespace ClientManager.Infrastructure.Presentation.Controllers
 {
-    [Authorize]
     [ApiVersion("1.0")]
     [Route("api/clients/{clientId}/founders")]
     [ApiController]

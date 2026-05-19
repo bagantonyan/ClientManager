@@ -1,12 +1,11 @@
 ﻿using ClientManager.Core.Domain.Entities;
 using ClientManager.Infrastructure.Persistence.Extensions;
-using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 
 namespace ClientManager.Infrastructure.Persistence
 {
-    public class RepositoryContext : IdentityDbContext<User>
+    public class RepositoryContext : DbContext
     {
         private readonly TimeProvider _timeProvider;
 
