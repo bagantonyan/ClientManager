@@ -64,7 +64,7 @@ namespace ClientManager.Core.Services
             {
                 if (existing.DeletedDate is not null)
                 {
-                    _logger.LogInformation($"Restoring soft-deleted founder. Id: {existing.Id}, INN: {existing.INN}.");
+                    _logger.LogInformation($"Restoring soft-deleted founder. Id: {existing.Id}.");
                     existing.DeletedDate = null;
                     existing.FullName = founderForCreation.FullName!;
                 }
@@ -81,7 +81,7 @@ namespace ClientManager.Core.Services
             }
             else
             {
-                _logger.LogDebug($"Creating new founder for client {clientId}. INN: {founderForCreation.INN}.");
+                _logger.LogDebug($"Creating new founder for client {clientId}.");
                 founderEntity = _mapper.Map<Founder>(founderForCreation);
                 _repository.Founder.CreateFounderForClient(client, founderEntity);
             }

@@ -53,7 +53,7 @@ namespace ClientManager.Core.Services
 
             await _repository.SaveAsync(ct);
 
-            _logger.LogInformation($"Client saved. Id: {clientEntity.Id}, INN: {clientEntity.INN}.");
+            _logger.LogInformation($"Client saved. Id: {clientEntity.Id}.");
 
             var clientToReturn = _mapper.Map<ClientDto>(clientEntity);
 
@@ -207,7 +207,7 @@ namespace ClientManager.Core.Services
         {
             if (cache.TryGetValue(dto.INN!, out var cached))
             {
-                _logger.LogDebug($"Founder INN {dto.INN} resolved from in-request cache.");
+                _logger.LogDebug("Founder resolved from in-request cache.");
                 return cached;
             }
 
@@ -218,19 +218,19 @@ namespace ClientManager.Core.Services
             {
                 if (existing.DeletedDate is not null)
                 {
-                    _logger.LogInformation($"Restoring soft-deleted founder. Id: {existing.Id}, INN: {existing.INN}.");
+                    _logger.LogInformation($"Restoring soft-deleted founder. Id: {existing.Id}.");
                     existing.DeletedDate = null;
                     existing.FullName = dto.FullName!;
                 }
                 else
                 {
-                    _logger.LogDebug($"Reusing existing active founder. Id: {existing.Id}, INN: {existing.INN}.");
+                    _logger.LogDebug($"Reusing existing active founder. Id: {existing.Id}.");
                 }
                 result = existing;
             }
             else
             {
-                _logger.LogDebug($"Creating new founder. INN: {dto.INN}.");
+                _logger.LogDebug("Creating new founder.");
                 result = _mapper.Map<Founder>(dto);
             }
 
@@ -250,11 +250,11 @@ namespace ClientManager.Core.Services
             {
                 if (existing.DeletedDate is null)
                 {
-                    _logger.LogWarning($"Attempt to create client with already-active INN {dto.INN}.");
+                    _logger.LogWarning($"Attempt to create client with conflicting INN. Existing client Id: {existing.Id}.");
                     throw new ClientWithSameInnExistsException(dto.INN!);
                 }
 
-                _logger.LogInformation($"Restoring soft-deleted client. Id: {existing.Id}, INN: {existing.INN}.");
+                _logger.LogInformation($"Restoring soft-deleted client. Id: {existing.Id}.");
                 existing.DeletedDate = null;
                 existing.Name = dto.Name!;
                 existing.ClientType = dto.ClientType;
@@ -262,7 +262,7 @@ namespace ClientManager.Core.Services
             }
             else
             {
-                _logger.LogDebug($"Creating new client. INN: {dto.INN}.");
+                _logger.LogDebug("Creating new client.");
                 // Validators ensure INN/Name are non-null before reaching the service.
                 clientEntity = new Client
                 {
