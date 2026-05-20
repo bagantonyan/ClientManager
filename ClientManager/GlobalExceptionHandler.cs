@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace ClientManager
 {
-    public class GlobalExceptionHandler : IExceptionHandler
+    public sealed class GlobalExceptionHandler : IExceptionHandler
     {
         private readonly ILoggerManager _logger;
         private readonly IProblemDetailsService _problemDetailsService;
@@ -37,9 +37,9 @@ namespace ClientManager
             var logMessage = $"Request to {httpContext.Request.Method} {httpContext.Request.Path} failed with {statusCode}: {exception.Message}";
 
             if (statusCode >= 500)
-                _logger.LogError(logMessage);
+                _logger.LogError(exception, logMessage);
             else
-                _logger.LogWarning(logMessage);
+                _logger.LogWarning(exception, logMessage);
 
             var correlationId = httpContext.Response.Headers.TryGetValue(CorrelationIdMiddleware.HeaderName, out var v)
                 ? v.ToString()

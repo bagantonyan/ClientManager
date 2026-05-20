@@ -1,4 +1,4 @@
-﻿using Serilog;
+using Serilog;
 
 namespace LoggingService
 {
@@ -7,6 +7,8 @@ namespace LoggingService
         public void LogDebug(string message) => logger.Debug(message);
         public void LogInformation(string message) => logger.Information(message);
         public void LogWarning(string message) => logger.Warning(message);
+        public void LogWarning(Exception exception, string message) => logger.Warning(exception, message);
         public void LogError(string message) => logger.Error(message);
+        public void LogError(Exception exception, string message) => logger.Error(exception, message);
     }
 }
